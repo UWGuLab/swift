@@ -26,6 +26,11 @@
 #include <iostream>
 #include <fstream>
 #include "ProbabilitySequence.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cstdlib>
+#include <unistd.h>
+#include <limits.h>
 
 using namespace std;
 
@@ -78,6 +83,13 @@ public:
   }
 
   void open() {
+    size_t found = filename.find_last_of('.');
+    string init = "../";
+    string foldername = filename.substr(0, found);
+    foldername = init + foldername;
+    mkdir(foldername.c_str(), 0755);
+    chdir(foldername.c_str());
+ 
     fastq_handle.open(filename.c_str());
   }
 

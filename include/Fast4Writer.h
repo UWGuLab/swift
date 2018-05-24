@@ -26,6 +26,12 @@
 #include <iostream>
 #include <fstream>
 #include "ProbabilitySequence.h"
+// following #include's are added on 5/22/2018 by Shohei
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <cstdlib>
+#include <unistd.h>
+#include <limits.h>
 
 using namespace std;
 
@@ -127,6 +133,15 @@ public:
   }
 
   void open() {
+    size_t found = filename.find_last_of('.');
+    std::string init = "../";
+    std::string foldername = filename.substr(0, found);
+    foldername = init + foldername;
+
+    mkdir(foldername.c_str(), 0755);
+    
+    chdir(foldername.c_str());
+
     fast4_handle.open(filename.c_str());
 
     fast4_handle << get_fast4_header();

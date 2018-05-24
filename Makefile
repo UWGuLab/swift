@@ -10,7 +10,7 @@ SWIFT_IMAGEANALYSIS = $(SWIFT_IMAGEANALYSIS_H)/*.h \
 
 CPPFILES = ./include_lib/gnuplot_i.cc ./SwiftImageAnalysis/SwiftFFT.cpp 
 
-HFILES = ./CrossTalkCorrection/*.cpp ./CrossTalkCorrection/*.h ./include/CommandLine.h
+HFILES = ./CrossTalkCorrection/*.cpp ./CrossTalkCorrection/*.h ./include/*.h
 
 IFILES = -I./Filters -I./SmallAlign -I./MockImageAnalysis -I./BaseCaller \
          -I./include -I./CrossTalkCorrection -I./PhasingCorrection \
