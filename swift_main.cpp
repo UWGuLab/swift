@@ -20,8 +20,12 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>            // for string stream --Arthur 6/20/2018
 #include <vector>
 #include <iomanip>
+#include <ctime>              // for time  --Arthur 6/21/2018
+#include <numeric>           // for standard deviation and mean -- Arthur 6/21/2018
+#include <algorithm>         // same as above
 #include "ImageAnalysis.h"
 #include "MockImageAnalysis.h"
 #include "CrossTalkCorrection.h"
@@ -55,16 +59,25 @@ using namespace std;
 typedef float _precision;
 
 bool process_parameters (int argc, char **argv);
-void write_sequence_files(CommandLine *parms, vector<Cluster<_precision> > &clusters); 
+void write_sequence_files(CommandLine *parms, vector<Cluster<_precision> > &clusters);
 
+// for quick report  --Arthur 6/21/2018
+int image_width=1, image_height=1;
+int num_cluster_before;
+typedef struct measure {
+  double avg;
+  double std;
+} measurement;
+measurement tot, A, T, C, G;
+int pass_purity;
 int main (int argc, char **argv) {
-  
+
   cerr << "Swift " << SVN_REV << endl;
   Timetagger m_tt;
 
   if(!process_parameters (argc, argv)) return 0;
   CommandLine *parms = CommandLine::Instance();
- 
+
   cerr << parms->dump_settings();
 
   bool have_reference = true;
@@ -74,7 +87,7 @@ int main (int argc, char **argv) {
   } else {
     have_reference     = false;
   }
-  
+
   string images_a_filename     (parms->get_parm("img-a"));
   string images_c_filename     (parms->get_parm("img-c"));
   string images_g_filename     (parms->get_parm("img-g"));
@@ -86,14 +99,14 @@ int main (int argc, char **argv) {
   string pf_fastq              (parms->get_parm("pf"));
   string nonpf_fastq           (parms->get_parm("non-pf"));
   string tiletag               (parms->get_parm("tag"));
-  
+
   size_t params_purity_length         (parms->get_parm_as<size_t>("purity_length"));
 
-  bool   gnuplot; 
+  bool   gnuplot;
   if(parms->get_parm("gnuplot") == string("1")) gnuplot = true;
   else                                          gnuplot = false;
-  
-  bool   discard_offedge; 
+
+  bool   discard_offedge;
   if(parms->get_parm("discard_offedge") == string("1")) discard_offedge = true;
   else                                                  discard_offedge = false;
 
@@ -107,7 +120,7 @@ int main (int argc, char **argv) {
 
   vector<Cluster<_precision> > clusters;
   string runxml;
-  
+
   runxml += parms->dump_settings_xml();
 
   if(!parms->is_set("intfile")) {
@@ -119,9 +132,14 @@ int main (int argc, char **argv) {
                                                                                 images_c_filename,
                                                                                 images_g_filename,
                                                                                 images_t_filename);
- 
+
     mem_misc.start ("analyser->generate");           // this will stop the previous timer
     m_image_analyser->generate(clusters);
+
+    if (parms->is_set("quick_reports")) {
+      image_width = m_image_analyser->image_size_x;
+      image_height = m_image_analyser->image_size_y;
+    }
 
     runxml += m_image_analyser->offsets_xml;
 
@@ -138,6 +156,7 @@ int main (int argc, char **argv) {
       getline(intfile,str);
 
       if(!intfile.eof()) {
+        // _precision is just float
         Cluster<_precision> c;
         c.read_gapipelinestr("RAW",str);
 
@@ -145,9 +164,13 @@ int main (int argc, char **argv) {
         if(n==0) cout << c;
         n++;
       }
-    } 
-  } 
-  
+    }
+  }
+
+  if (parms->is_set("quick_reports")) {
+    num_cluster_before = clusters.size();
+  }
+
   if(parms->is_set("intout")) {
     cout << m_tt.str() << "Saving intensity data" << endl;
     ofstream intout_file(intout_filename.c_str());
@@ -165,13 +188,13 @@ int main (int argc, char **argv) {
     // Through out anything with a 0 anywhere in the first cycle.
     ClusterFilter_FirstOffEdge<_precision> first_offedge("RAW");
     first_offedge.process(clusters);
-    
+
     ClusterFilter_OffEdge<_precision> any_offedge("RAW",0);
     any_offedge.process(clusters);
   }
 
   remove_invalid_clusters(clusters);
-  
+
   cout << m_tt.str() << " Clusters after removal: " << clusters.size() << endl;
 
 
@@ -202,11 +225,11 @@ int main (int argc, char **argv) {
   mem_misc.start ("crosstalk correction");
   m_crosstalk_correction.process(clusters);
   mem_misc.stop();
-  
+
   mem_misc.start ("Clear RAW clusters");
   clear_cluster_signal(clusters,"RAW");
   mem_misc.stop();
-  
+
   // Pure Crosstalk correction
   PureCrossTalkCorrection<_precision> m_pcrosstalk_correction(0,
                                                               20,
@@ -218,25 +241,25 @@ int main (int argc, char **argv) {
   mem_misc.start ("pure crosstalk correction");
   m_pcrosstalk_correction.process(clusters);
   mem_misc.stop();
-  
+
 
   mem_misc.start ("Clear TALK1 clusters");
   clear_cluster_signal(clusters,"TALK1");
   mem_misc.stop();
-  
+
   // Set negative values to 0
   ClusterFilter_NegativeZero<_precision> m_clusterfilter_negativezero("CTALK","CTALK");
   mem_misc.start ("negativezero");
   m_clusterfilter_negativezero.process(clusters);
   mem_misc.stop();
 
-  // Normalise signals 
+  // Normalise signals
   mem_misc.start ("normalisation");
   ClusterFilter_Normalise<_precision> m_normalisation(clusters,"CTALK","NORMALISED");
   mem_misc.start ("normalisation.process");
   m_normalisation.process(clusters);
 
-  
+
   if(gnuplot) {
     cout << m_tt.str() << "Plotting corrected values" << endl;
     crosstalk_plot(clusters,"CTALK",0,ReadIntensity<>::base_a,ReadIntensity<>::base_t,"Corrected");
@@ -245,7 +268,7 @@ int main (int argc, char **argv) {
     crosstalk_plot(clusters,"CTALK",0,ReadIntensity<>::base_g,ReadIntensity<>::base_t,"Corrected");
     crosstalk_plot(clusters,"CTALK",0,ReadIntensity<>::base_t,ReadIntensity<>::base_c,"Corrected");
     crosstalk_plot(clusters,"CTALK",0,ReadIntensity<>::base_g,ReadIntensity<>::base_c,"Corrected");
-  
+
     // Wait so the user can get a look at the crosstalk plots
     cout << m_tt.str() << endl << "Press ENTER to continue..." << endl;
 
@@ -253,7 +276,7 @@ int main (int argc, char **argv) {
     std::cin.ignore(std::cin.rdbuf()->in_avail());
     std::cin.get();
   }
-  
+
   mem_misc.start ("clear CTALK");
   clear_cluster_signal(clusters,"CTALK");
   mem_misc.stop();
@@ -270,25 +293,25 @@ int main (int argc, char **argv) {
 
   int phasing_iterations = parms->get_parm_as<int>("phasing_iterations");
   for(int n=0;n<phasing_iterations;n++) {
-    
+
     if(n==(phasing_iterations-1)) targetid= "FINAL";
-    
+
     PhasingCorrection<_precision> m_phasing_correction(parms->get_parm_as<float>("phasing_threshold"),
                                                        parms->get_parm_as<float>("phasing_window"),
                                                        sourceid,
                                                        targetid);
     m_phasing_correction.process(clusters);
-    
+
     if(sourceid.compare(targetid) != 0) {
       mem_misc.start ("clear in phasing: " + sourceid);
       clear_cluster_signal(clusters,sourceid);
       mem_misc.stop();
     }
-    
+
     sourceid=targetid;
     targetid=sourceid;
   }
- 
+
   clear_cluster_validity(clusters,true);
 
   // Remove optical duplicates
@@ -300,7 +323,7 @@ int main (int argc, char **argv) {
   remove_invalid_clusters(clusters);
   mem_misc.stop();
   cout << m_tt.str() << "Clusters, optical duplicates removed: " << clusters.size() << endl;
-  
+
   if(parms->is_set("sigs")) {
     cout << m_tt.str() << "Saving run data" << endl;
     ofstream signals_file(raw_signals_filename.c_str());
@@ -309,7 +332,7 @@ int main (int argc, char **argv) {
     }
     signals_file.close();
   }
-  
+
   if(parms->is_set("corrected_intout")) {
     cout << m_tt.str() << "Saving intensity data" << endl;
     ofstream intout_file(corrected_intout_filename.c_str());
@@ -329,14 +352,14 @@ int main (int argc, char **argv) {
   mem_misc.start ("basecalling");
   PrbBaseCaller<_precision> m_base_caller_phas("FINAL","FINAL");
   m_base_caller_phas.process(clusters,false);
- 
+
   mem_misc.stop();
 
 
   write_sequence_files(parms,clusters);
-  
+
   mem_misc.start ("generate stats for reports");   // constructor generates stats
-  
+
   int pair_break=0;
   if(parms->is_set("pair_break")) pair_break = parms->get_parm_as<int>("pair_break") - 1;   // 0-based index
 
@@ -357,17 +380,177 @@ int main (int argc, char **argv) {
   cout << m_tt.str() << "Swift complete, report file: " << report_filename << endl;
 }
 
+static string gettime() {
+    time_t tt;
+    struct tm * ti;
+    time (&tt);
+    ti = localtime(&tt);
+    return asctime(ti);
+}
+
+static void writeReport(ofstream& report, const string& writes) {
+  const char separator    = ' ';
+  const int titleWidth    = 55;
+  report << left << setw(titleWidth) << setfill(separator) << writes;
+}
+
+static void getMeanAndstd (vector<int> &v, double &mean, double &stdev) {
+  double sum = std::accumulate(v.begin(), v.end(), 0.0);
+  mean = sum / v.size();
+
+  std::vector<double> diff(v.size());
+  std::transform(v.begin(), v.end(), diff.begin(),
+               std::bind2nd(std::minus<double>(), mean));
+  double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+  stdev = std::sqrt(sq_sum / v.size());
+}
+
+static void updateSequenceInfo(vector<Cluster<_precision> > &clusters, string tiletag) {
+  vector<int> *v_a = new vector<int>();
+  vector<int> *v_t = new vector<int>();
+  vector<int> *v_c = new vector<int>();
+  vector<int> *v_g = new vector<int>();
+  vector<int> *v_tot = new vector<int>();
+  for(auto it=clusters.begin(); it != clusters.end(); it++) {
+    if ((*it).is_valid()) {
+      pass_purity++;
+    }
+    string sequence = (*it).sequence("FINAL",tiletag).get_sequence_string();
+    vector<int> scores = (*it).sequence("FINAL",tiletag).phred_quality();
+    for (size_t i = 0; i < scores.size(); i++) {
+      if (sequence[i]=='A') {
+        v_a->push_back(scores[i]);
+      } else if (sequence[i]=='T') {
+        v_t->push_back(scores[i]);
+      } else if (sequence[i]=='C') {
+        v_c->push_back(scores[i]);
+      } else {
+        v_g->push_back(scores[i]);
+      }
+      v_tot->push_back(scores[i]);
+    }
+  }
+  getMeanAndstd(*v_a, A.avg, A.std);
+  getMeanAndstd(*v_t, T.avg, T.std);
+  getMeanAndstd(*v_c, C.avg, C.std);
+  getMeanAndstd(*v_g, G.avg, G.std);
+  getMeanAndstd(*v_tot, tot.avg, tot.std);
+}
 
 
 void write_sequence_files(CommandLine *parms,
-                          vector<Cluster<_precision> > &clusters) {  
-  
+                          vector<Cluster<_precision> > &clusters) {
+
   Memstats mem_misc;                  // this will be started and stopped repeatedly
-  
+
   string tiletag               (parms->get_parm("tag"));
-  
+  // fastq. was the prefex that we want to get rid
+  string exp_name = (parms->get_parm("fastq")).substr(6);
+
+  if (parms->is_set("quick_reports")) {
+    ofstream report;
+    report.open("Quick_Reports_" + exp_name + ".txt");
+    writeReport(report, "Date:");
+    report << gettime() << "\r\n";
+    writeReport(report, "Branch & Version:");
+    report << "\r\n";
+    writeReport(report, "Data Set:");
+    report << "\r\n";
+    writeReport(report, "Run Time:");
+    report << "\r\n";
+    writeReport(report, "Image Size:");
+    report << image_width << "x" << image_height << "\r\n";
+    writeReport(report, "Number of Pixels:");
+    report << image_width*image_height << "\r\n";
+    writeReport(report, "Total Number of Clusters Before Base Calls:");
+    report << num_cluster_before << "\r\n";
+    writeReport(report, "Cluster Density Before Base Calls:");
+    report << (100.00 * num_cluster_before) / (image_width*image_height) << "%"<< "\r\n";
+    writeReport(report, "Total Number of Clusters After Base Calls: ");
+    report << clusters.size() << "\r\n";
+    writeReport(report, "Cluster Density After Base Calls:");
+    report << (100.00 * clusters.size()) / (image_width*image_height) << "%" << "\r\n";
+    writeReport(report, "Cluster Survival Rate:");
+    report << (100.00 * clusters.size() ) / num_cluster_before << "%" << "\r\n";
+
+    updateSequenceInfo(clusters, tiletag);
+    writeReport(report, "Pass Purity Filter rate:");
+    report << (100.00 * pass_purity) / clusters.size() << "%" << "\r\n";
+    writeReport(report, "Avg. Sequence score:");
+    report << tot.avg << "\r\n";
+    writeReport(report, "Standard Deviation of Sequence Scores:");
+    report << tot.std << "\r\n";
+    report << "Base Scores:" << "\r\n";
+    report << right << setw(12) << setfill(' ') << "A: " << "avg.     " << A.avg;
+    report << " standard deviation: " << A.std << "\r\n";
+    report << right << setw(12) << setfill(' ') << "T: " << "avg.     " << T.avg;
+    report << " standard deviation: " << T.std << "\r\n";
+    report << right << setw(12) << setfill(' ') << "C: " << "avg.     " << C.avg;
+    report << " standard deviation: " << C.std << "\r\n";
+    report << right << setw(12) << setfill(' ') << "G: " << "avg.     " << G.avg;
+    report << " standard deviation: " << G.std << "\r\n";
+    report << "Parameters Changed (from branch & version)" << "\r\n";
+    report << "\r\n" << "\r\n" << "\r\n";
+    report.close();
+  }
+
+  // produces coordiante_maps --Arthur 6/20/2018
+  if (parms->is_set("coordinate_maps")) {
+    ofstream pfCoorMap, nonpfCoorMap;
+    // using fastq prefix
+    pfCoorMap.open("coordinate_maps_" + exp_name + ".pf");
+    nonpfCoorMap.open("coordinate_maps_" + exp_name + ".nonpf");
+    for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
+      // stringstream hijack data from saving intensity data
+      // Recall that intensity data is in this form:
+      // 1 1 |x| |y| |intensity channel1 cyc1| |intensity channel2 cyc1| …
+      stringstream intensity_data ((*i).dump_gapipelinestr("FINAL"));
+      // prepare data
+      int tmp, x, y;
+      double intensity;
+      string sequence;
+      vector<int> scores;
+      intensity_data >> tmp;
+      intensity_data >> tmp;
+      intensity_data >> x;
+      intensity_data >> y;
+      intensity_data >> intensity;
+      sequence = (*i).sequence("FINAL",tiletag).get_sequence_string();
+      scores = (*i).sequence("FINAL",tiletag).phred_quality();
+
+      if((*i).is_valid()) {
+        // "x y"
+        pfCoorMap << x << " " << y << " ";
+        // Sequence
+        pfCoorMap << sequence << " ";
+        // Quality Scores
+        for (auto it = scores.begin(); it != scores.end(); it++) {
+          if ((it+1) != scores.end())
+            pfCoorMap << *it << ",";
+          else
+            pfCoorMap << *it << " ";
+        }
+        // Intensity at the first cycle
+        pfCoorMap << intensity << endl;
+      } else {
+        // same as above but to nonpfCoorMap
+        nonpfCoorMap << x << " " << y << " ";
+        nonpfCoorMap << sequence << " ";
+        for (auto it = scores.begin(); it != scores.end(); it++) {
+          if ((it+1) != scores.end())
+            nonpfCoorMap << *it << ",";
+          else
+            nonpfCoorMap << *it << " ";
+        }
+        nonpfCoorMap << intensity << endl;
+      }
+    }
+    pfCoorMap.close();
+    nonpfCoorMap.close();
+  }
+
   // Write FASTQs
-  if(parms->is_set("fastq")) { 
+  if(parms->is_set("fastq")) {
     string fastq_prefix = parms->get_parm("fastq");
 
     if(!parms->is_set("pair_break")) {
@@ -379,7 +562,7 @@ void write_sequence_files(CommandLine *parms,
 
       pfFastq.open();
       nonpfFastq.open();
-      
+
       // PF Filter
       for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
         if((*i).is_valid())    pfFastq.write((*i).sequence("FINAL",tiletag));
@@ -388,14 +571,14 @@ void write_sequence_files(CommandLine *parms,
       pfFastq.close();
       nonpfFastq.close();
       mem_misc.stop();
-      
+
     } else {
-      
+
       // Write FASTQs
       mem_misc.start ("write fastq files");
-      
+
       int pair_break = parms->get_parm_as<int>("pair_break") - 1;     // convert to 0-based index
-      
+
       FastqWriter pfFastq1   (fastq_prefix + ".pf.end1");
       FastqWriter pfFastq2   (fastq_prefix + ".pf.end2");
 
@@ -406,14 +589,14 @@ void write_sequence_files(CommandLine *parms,
       pfFastq2.open();
       nonpfFastq1.open();
       nonpfFastq2.open();
-      
+
       // PF Filter
       for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
-        
+
         if((*i).is_valid()) {
           pfFastq1.write((*i).sequence("FINAL",tiletag + ":end1").trim(0         ,pair_break-1));
           pfFastq2.write((*i).sequence("FINAL",tiletag + ":end2").trim(pair_break,-1          ));
-        } else { 
+        } else {
           nonpfFastq1.write((*i).sequence("FINAL",tiletag + ":end1").trim(0         ,pair_break-1));
           nonpfFastq2.write((*i).sequence("FINAL",tiletag + ":end2").trim(pair_break,-1          ));
         }
@@ -421,7 +604,7 @@ void write_sequence_files(CommandLine *parms,
 
       pfFastq1.close();
       pfFastq2.close();
-      
+
       nonpfFastq1.close();
       nonpfFastq2.close();
       mem_misc.stop();
@@ -429,7 +612,7 @@ void write_sequence_files(CommandLine *parms,
   }
 
   // Write FAST4s
-  if(parms->is_set("fast4")) { 
+  if(parms->is_set("fast4")) {
     string fast4_prefix   = parms->get_parm("fast4");
     bool   fast4_textmode = parms->is_set("textmode");
 
@@ -444,10 +627,10 @@ void write_sequence_files(CommandLine *parms,
         pfFast4   .set_textmode();
         nonpfFast4.set_textmode();
       }
-      
+
       pfFast4.open();
       nonpfFast4.open();
-      
+
       // PF Filter
       for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
         if((*i).is_valid())     pfFast4.write((*i).sequence("FINAL",tiletag));
@@ -456,20 +639,20 @@ void write_sequence_files(CommandLine *parms,
       pfFast4.close();
       nonpfFast4.close();
       mem_misc.stop();
-      
+
     } else {
-      
+
       // Write FAST4s
       mem_misc.start ("write fast4 files");
-      
+
       int pair_break = parms->get_parm_as<int>("pair_break") - 1;     // convert to 0-based index
-      
+
       Fast4Writer<size_t,float> pfFast41   (fast4_prefix + ".pf.end1");
       Fast4Writer<size_t,float> pfFast42   (fast4_prefix + ".pf.end2");
 
       Fast4Writer<size_t,float>  nonpfFast41(fast4_prefix + ".nonpf.end1");
       Fast4Writer<size_t,float>  nonpfFast42(fast4_prefix + ".nonpf.end2");
-      
+
       if(fast4_textmode) {
         pfFast41   .set_textmode();
         nonpfFast41.set_textmode();
@@ -481,13 +664,13 @@ void write_sequence_files(CommandLine *parms,
       pfFast42.open();
       nonpfFast41.open();
       nonpfFast42.open();
-      
+
       for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
-        
+
         if((*i).is_valid()) {
           pfFast41.write((*i).sequence("FINAL",tiletag + ":end1").trim(0         ,pair_break-1));
           pfFast42.write((*i).sequence("FINAL",tiletag + ":end2").trim(pair_break,-1          ));
-        } else { 
+        } else {
           nonpfFast41.write((*i).sequence("FINAL",tiletag + ":end1").trim(0         ,pair_break-1));
           nonpfFast42.write((*i).sequence("FINAL",tiletag + ":end2").trim(pair_break,-1          ));
         }
@@ -495,17 +678,17 @@ void write_sequence_files(CommandLine *parms,
 
       pfFast41.close();
       pfFast42.close();
-      
+
       nonpfFast41.close();
       nonpfFast42.close();
       mem_misc.stop();
     }
   }
-  
+
 }
 
 bool process_parameters (int argc, char **argv) {
-  
+
   CommandLine *parms = CommandLine::Instance();
 
   parms->add_valid_parm("config"                               ,"Configuration file");
@@ -521,29 +704,29 @@ bool process_parameters (int argc, char **argv) {
   parms->add_valid_parm("fastq"                                ,"fastq file prefix");
   parms->add_valid_parm("fast4"                                ,"fast4 file prefix");
   parms->add_valid_parm("textmode"                             ,"write fast4 ascii files in text mode, full probabilities not ascii encoded quality scores");
-  
+
   parms->add_valid_parm("intfile"                              ,"Load for Solexa style intensity file, instead of performing image analysis");
   parms->add_valid_parm("tag"                                  ,"Tag to write at the top of the report, for example Run ID, lane and tile (optional)");
 
   parms->add_valid_parm("optical_duplicates_distance"          ,"Distance in which to search of optical duplicates", false, "0");
   parms->add_valid_parm("optical_duplicates_mismatches"        ,"Number of mismatches allowed in sequences found", false, "10");
-  parms->add_valid_parm("purity_length"                        ,"Length over which purity is calculated", false, "25");        
+  parms->add_valid_parm("purity_length"                        ,"Length over which purity is calculated", false, "25");
   parms->add_valid_parm("purity_threshold"                     ,"Threshold on purity (minimum value must be more than this)", false, "0.6");
-  
+
   parms->add_valid_parm("threshold_window"                     ,"Thresholding for segmentation, distance", false, "6");
   parms->add_valid_parm("threshold"                            ,"Thresholding for segmentation, fraction of max value", false, "0.8");
   parms->add_valid_parm("watershed"                            ,"Apply watershed segmentation to thresholded images?", false, "false");
 
   parms->add_valid_parm("correlation_threshold_window"         ,"Thresholding used when correlating images (window size)", false, "12");
   parms->add_valid_parm("correlation_threshold"                ,"Thresholding used when correlating images (fraction of max value)", false, "0.5");
-  parms->add_valid_parm("correlation_subimages"                ,"The number of subimages to use, e.g. 2 will produce different offsets for each image quarter", false, "6"); 
+  parms->add_valid_parm("correlation_subimages"                ,"The number of subimages to use, e.g. 2 will produce different offsets for each image quarter", false, "6");
   parms->add_valid_parm("correlation_subsubimages"             ,"The number of subsubimages, these are used to make the offset calculation for subimages more robust", false, "2");
-  parms->add_valid_parm("correlation_cc_subimage_multiplier"   ,"A multiplier for subimages, this allows crosschannel offsets to be calculated at a higher resolution to channel offsets",false,"1");  
+  parms->add_valid_parm("correlation_cc_subimage_multiplier"   ,"A multiplier for subimages, this allows crosschannel offsets to be calculated at a higher resolution to channel offsets",false,"1");
   parms->add_valid_parm("correlation_reference_cycle"          ,"Reference cycle for first pass of correlation", false, "5");
   parms->add_valid_parm("correlation_aggregate_cycle"          ,"Sum images to this cycle for generating cross-channel offset", false, "34");
   parms->add_valid_parm("correlation_median_channels"          ,"Take the median between channels before cross-channel offseting", false, "true");
   parms->add_valid_parm("correlation_use_bases"                ,"Use how many channel in cross-correlation channel offsets?",false,"-1");
- 
+
   parms->add_valid_parm("crosstalk_slope_threshold"            ,"Crosstalk will be iteratively corrected until the slope of the arms is less than this value",false,"0.0001");
   parms->add_valid_parm("crosstalk_lowerpercentile"            ,"Lower Percentile used in first round crosstalk correction",false,"15");
   parms->add_valid_parm("crosstalk_upperpercentile"            ,"Upper Percentile used in first round crosstalk correction",false,"85");
@@ -575,7 +758,7 @@ bool process_parameters (int argc, char **argv) {
   parms->add_valid_parm("remove_blended"                       ,"Unused", false, "false");
 
   parms->add_valid_parm("pair_break"                           ,"Position of second end (first end length+1)",false,"");
-  parms->add_valid_parm("max_clusters"                         ,"Maximum number of clusters to generate, will fail if more than this are created",false,"1500000"); 
+  parms->add_valid_parm("max_clusters"                         ,"Maximum number of clusters to generate, will fail if more than this are created",false,"1500000");
 
   parms->add_valid_parm("calculate_noise"                      ,"Calculate noise estimates",false,"false");
   parms->add_valid_parm("align_every"                          ,"Align every Nth read",false,"50");
@@ -584,6 +767,11 @@ bool process_parameters (int argc, char **argv) {
   parms->add_valid_parm("gnuplot"                              ,"Plot crosstalk with gnuplot",false,"false");
 
   parms->add_valid_parm("discard_offedge"                      ,"Discards any cluster that has fallen off the edge of the imaging area, in any cycle",false,"false");
+
+  // To Produce Coordinate Maps  --Arthur 6/19/2018
+  parms->add_valid_parm("coordinate_maps"                      ,"Produce Coordinate Maps, i.e. 4 images each representing presence of A, T, C, G at that cycle", false, "false");
+  // To produce quick reports
+  parms->add_valid_parm("quick_reports"                        ,"Produce quick reports and Heatmap in a folder called reports");
 
   if(argc < 2) {
     cout << parms->usage() << endl;
@@ -597,7 +785,7 @@ bool process_parameters (int argc, char **argv) {
     parms->read_config_file(parms->get_parm("config"));
   }
   parms->check();
-  
+
   return true;
-  
+
 }

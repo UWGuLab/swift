@@ -30,7 +30,7 @@
 #include "ReadIntensity.h"
 #include "ProbabilitySequence.h"
 #include <algorithm>
-  
+
 // To use alternate allocator:
 /*
   typedef std::vector<intensities_type,__gnu_cxx::new_allocator<intensities_type> >        signal_vec_type;  ///< Type which holds a vector of signal intensities.
@@ -39,7 +39,7 @@
   map<string,noise_vec_type ,less<string>,__gnu_cxx::new_allocator<pair<string,signal_vec_type>  > >  noise_vec;                  ///< Map of Vectors of noise estimates
 */
 
-template <class _prec = float, class _position_prec = int> 
+template <class _prec = float, class _position_prec = int>
 class Cluster {
 
 public:
@@ -69,7 +69,7 @@ public:
     signal_ids.push_back("RAW");
     // sequence_ids.push_back("BASECALL"); // Should I be adding this here, or let BaseCaller do it?
   }
-  
+
   inline bool is_valid() const {
     return valid;
   }
@@ -79,7 +79,7 @@ public:
   }
 
   bool add_signal(string identifier) {
-    
+
     if(signal_vec.find(identifier) == signal_vec.end()) {
       signal_vec[identifier] = signal_vec_type();
       noise_vec [identifier] = noise_vec_type();
@@ -91,7 +91,7 @@ public:
   }
 
   bool add_sequence(string identifier) {
-    
+
     if(sequences.find(identifier) == sequences.end()) {
       sequences[identifier] = sequence_type();
       last_process_sequence = identifier;
@@ -102,7 +102,7 @@ public:
   }
 
   inline void delete_signal(const string &identifier) {
-   
+
     signal_vec_type mst;
     noise_vec_type  mnt;
 
@@ -112,9 +112,9 @@ public:
 
     signal_vec.erase(identifier);
     noise_vec .erase(identifier);
-    
+
     if(signal_vec.find(identifier) != signal_vec.end()) cerr << "Error in Cluster.h: identifier not deleted in delete: " << identifier << endl;
-    
+
     std::remove(signal_ids.begin(),signal_ids.end(),identifier);
   }
 
@@ -127,7 +127,7 @@ public:
   noise_vec_type &noise(const string &identifier) {
     return (*noise_vec.find(identifier)).second;
   }
-  
+
   /// Const Accessor for signal, no bounds checking
   const signal_vec_type &const_signal(const string &identifier) const {
 
@@ -142,17 +142,17 @@ public:
   const noise_vec_type &const_noise(const string &identifier) const {
     return (*noise_vec.find(identifier)).second;
   }
-  
+
   /// Accessor for sequence, no bounds checking
   sequence_type &sequence(string identifier) {
     return (*sequences.find(identifier)).second;
   }
-  
+
   /// Accessor for sequence, no bounds checking
   sequence_type &sequence(string identifier, string tag) {
     sequence_type &s = (*sequences.find(identifier)).second;
     s.set_id(tag + string(":") + stringify(m_position.x) + string(":") + stringify(m_position.y));
-  
+
     return s;
   }
 
@@ -170,7 +170,7 @@ public:
   noise_vec_type &raw_noise() {
     return (*noise_vec.find("RAW")).second;
   }
-  
+
   /// Accessor for RAW signal, no bounds checking, const version
   const signal_vec_type &const_raw_signal() const {
     return (*signal_vec("RAW")).second;
@@ -185,12 +185,12 @@ public:
   signal_vec_type &processed_signal() {
     return (*signal_vec(last_process_signal)).second;
   }
-  
+
   // Accessor for LAST_PROCESSED noise
   noise_vec_type &processed_noise() {
     return (*signal_vec(last_process_signal)).second;
   }
-  
+
   // Const accessor for LAST_PROCESSED signal
   const signal_vec_type &const_processed_signal() const {
     return (*signal_vec(last_process_signal)).second;
@@ -204,7 +204,7 @@ public:
   const string last_processed_signal() const {
     return last_process_signal;
   }
-  
+
   const string last_processed_sequence() const {
     return last_process_sequence;
   }
@@ -212,7 +212,7 @@ public:
   const vector<string> get_signal_ids() const {
     return signal_ids;
   }
-  
+
   const vector<string> get_sequence_ids() const {
     return sequence_ids;
   }
@@ -224,7 +224,7 @@ public:
   void set_position(const ClusterPosition<_position_prec> &newpos) {
     m_position = newpos;
   }
- 
+
 
   /// Compare similarity of two cluster signals
   /// If they are within some similarity threshold, return true
@@ -245,7 +245,7 @@ public:
         }
       }
     }
-    
+
     return similar_bases;
   }
 
@@ -253,7 +253,7 @@ public:
   // Return minimum Purity of bases between start_base and end_base.
   // No bounds checking.
   _prec min_purity(int start_base,int end_base,string signalid) const {
-    
+
     if(end_base < start_base) return 0;
     _prec min_purity = const_signal(signalid)[start_base].purity();
     for(int i=start_base+1;i <= end_base;i++) {
@@ -261,10 +261,10 @@ public:
     }
     return min_purity;
   }
-  
+
   // Return second lowest purity
   _prec min_purity2(int start_base,int end_base,string signalid) const {
-    
+
     _prec min_purity  = const_signal(signalid)[start_base].purity();
     _prec min_purity2 = min_purity;
     for(int i=start_base+1;i <= end_base;i++) {
@@ -307,19 +307,19 @@ public:
     for(typename signal_vec_type::const_iterator i = const_signal(signalid).begin();i != const_signal(signalid).end();i++) {
       if((*i).off_edge()) offedgecount++;
     }
-  
+
     if(offedgecount > threshold) return true; else return false;
   }
-  
+
   bool any_off_edge(string signalid, int threshold) const {
     int offedgecount=0;
     for(typename signal_vec_type::const_iterator i = const_signal(signalid).begin();i != const_signal(signalid).end();i++) {
       if((*i).any_off_edge()) offedgecount++;
     }
-  
+
     if(offedgecount > threshold) return true; else return false;
   }
-  
+
   bool first_off_edge(string signalid,unsigned int howmany) const {
     int offedgecount=0;
 
@@ -327,7 +327,7 @@ public:
     for(size_t i = 0;i < howmany;i++) {
       if(const_signal(signalid)[i].off_edge()) offedgecount++;
     }
-  
+
     if(offedgecount > 0) return true;
                  else    return false;
   }
@@ -340,7 +340,7 @@ public:
 
     return sum/signal_vec.size();
   }
-  
+
   _prec average_peaksignal_within(string signalid,int bases=0) const {
     _prec sum=0;
     for(int n=0;n < bases;n++) {
@@ -358,28 +358,28 @@ public:
     s += " ";
     for(typename signal_vec_type::const_iterator i = const_signal(signalid).begin();i != const_signal(signalid).end();i++) {
       s += (*i).as_string();
-      s += " ";
+      s += "\n";
     }
 
     return s;
   }
-  
+
   bool read_gapipelinestr(string signalid,string line) {
     stringstream in(line);
-    
+
     string s;
-    
+
     // discard lane and tile number
     in >> s;
     in >> s;
 
     in >> s;
     int x = convertTo<int>(s);
-    
+
     in >> s;
     int y = convertTo<int>(s);
     set_position(ClusterPosition<_position_prec>(x,y));
-    
+
     signal(signalid).clear();
     for(;!in.eof();) {
       string sa;
@@ -394,7 +394,7 @@ public:
       bool end_of_line = in.eof();
       string st;
       in >> st;
-     
+
       if(!end_of_line) {
         double a = convertTo<double>(sa);
         double c = convertTo<double>(sc);
@@ -410,7 +410,7 @@ public:
         if(c == 0.0) c_offedge=true;
         if(g == 0.0) g_offedge=true;
         if(t == 0.0) t_offedge=true;
-        
+
         signal(signalid).push_back(ReadIntensity<_prec>(a,c,g,t,a_offedge,c_offedge,g_offedge,t_offedge));
       }
     }
@@ -419,7 +419,7 @@ public:
   }
 
 };
- 
+
 #include "Cluster.cpp"
 
 #endif

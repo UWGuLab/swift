@@ -1,0 +1,57 @@
+#!/bin/bash
+
+export lane=$2
+export tile=$3
+
+export randname=$4
+
+
+ls  $1/Images/L00${lane}/C[1-9].1/s_${lane}_${tile}_a*.tif > a_images.$randname
+ls  $1/Images/L00${lane}/C1?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C2?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C3?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C4?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C5?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C6?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C7?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C8?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C9?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+ls  $1/Images/L00${lane}/C10?.1/s_$[lane]_$[tile]_a*.tif >> a_images.$randname
+
+ls  $1/Images/L00${lane}/C[1-9].1/s_${lane}_${tile}_c*.tif > c_images.$randname
+ls  $1/Images/L00${lane}/C1?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C2?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C3?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C4?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C5?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C6?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C7?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C8?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C9?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+ls  $1/Images/L00${lane}/C10?.1/s_$[lane]_$[tile]_c*.tif >> c_images.$randname
+
+ls  $1/Images/L00${lane}/C[1-9].1/s_${lane}_${tile}_g*.tif > g_images.$randname
+ls  $1/Images/L00${lane}/C1?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C2?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C3?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C4?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C5?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C6?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C7?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C8?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C9?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+ls  $1/Images/L00${lane}/C10?.1/s_$[lane]_$[tile]_g*.tif >> g_images.$randname
+
+ls  $1/Images/L00${lane}/C[1-9].1/s_${lane}_${tile}_t*.tif > t_images.$randname
+ls  $1/Images/L00${lane}/C1?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C2?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C3?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C4?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C5?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C6?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C7?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C8?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C9?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+ls  $1/Images/L00${lane}/C10?.1/s_$[lane]_$[tile]_t*.tif >> t_images.$randname
+
+gdb ./swift

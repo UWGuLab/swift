@@ -32,7 +32,7 @@
 #include <string>
 #include <algorithm>
 #include <fstream>
-#if defined(_OPENMP) 
+#if defined(_OPENMP)
 #include <omp.h>
 #endif
 
@@ -42,7 +42,7 @@ using namespace std;
 template<class _prec=double,class _threshold_prec=uint16>
 class ImageAnalysis {
 public:
-  
+
   typedef int base_type;            ///< type to use for bases
 
   static const int base_a       = 0; ///< These consts are the indexes which store the given base, this allows for accesses via base name, or iteration
@@ -52,6 +52,8 @@ public:
   static const int base_invalid = 4; ///< See base_a
 
   static const int base_num     = 4; ///< Number of real bases (used to size image_filenames vector)
+  // hacking in to get image size information for quick report   --Arthur 6/21/2018
+  mutable int image_size_x, image_size_y;
 
 
   ImageAnalysis(const vector<string> &image_filenames_a_in,       ///< List of filenames for A images, in cycle order
@@ -59,7 +61,7 @@ public:
                 const vector<string> &image_filenames_g_in,       ///< List of filenames for G images, in cycle order
                 const vector<string> &image_filenames_t_in,       ///< List of filenames for T images, in cycle order
                 ostream &err_in=std::cerr                         ///< Write debug/errors here
-                ) 
+                )
                 : image_filenames(base_num),
                   images(base_num),
                   err(err_in) {
@@ -69,8 +71,8 @@ public:
     image_filenames[base_c] = image_filenames_c_in;
     image_filenames[base_g] = image_filenames_g_in;
     image_filenames[base_t] = image_filenames_t_in;
-  
-    initialise();                
+
+    initialise();
   }
 
   /// This constructor takes list a list of files, containing lists of files, which contain the images...
@@ -79,11 +81,11 @@ public:
                 const string &image_filelist_filename_g,                            ///< File that contains a list of G image files in cycle order
                 const string &image_filelist_filename_t,                            ///< File that contains a list of T image files in cycle order
                 ostream &err_in=std::cerr                                           ///< Write debug/errors here
-                ) 
+                )
                 : image_filenames(base_num),
                   images(base_num),
                   err(err_in) {
-  
+
     image_filenames[base_a] = read_image_list(image_filelist_filename_a);
     image_filenames[base_c] = read_image_list(image_filelist_filename_c);
     image_filenames[base_g] = read_image_list(image_filelist_filename_g);
@@ -91,17 +93,17 @@ public:
 
     initialise();
   }
-  
+
   void inline initialise();                 ///< Initialise this object, called by constructor
 
   void generate(vector<Cluster<_prec> > &clusters);              ///< Runs image analysis and returns a vector of clusters single pass analysis
 
 public:
-  
+
   int     params_threshold_window;            ///< Window size for thresholding, used to identify clusters
   _prec   params_threshold;                   ///< Thresholding parameter for image analysis, used to identift clusters
   bool    params_watershed;                   ///< Apply watershed segmentation?
-  
+
   int     params_correlation_threshold_window;///< Window for image thresholding used in correlation (offset calculation)
   _prec   params_correlation_threshold;       ///< Threshold value used for offset calculation
   int     params_correlation_subimages;       ///< Number of subimages to calculate offsets for
@@ -124,7 +126,7 @@ public:
   int     params_crop_end_x;                  ///< Crop end x position
   int     params_crop_start_y;                ///< Crop start y position
   int     params_crop_end_y;                  ///< Crop end y position
- 
+
   int     params_cluster_limit;               ///< maximum allowable number of clusters
 
   bool    params_remove_blended;              ///< Attempt to remove clusters still blended after deblending
@@ -151,17 +153,17 @@ private:
 
   bool load_images(int load_first=10,bool grab_reference=false);                                             ///< Loads images into the images vector
   vector<string> read_image_list(string image_filelist_filename); ///< loads a file containing filelists and returns it as a string
-  
+
   int total_cycles;                           ///< total number of cycles, populated by load_images
 
   vector<vector<string> > image_filenames;    ///< vector, of filename vectors Indexed using base_a/t/g/c
   vector<vector<SwiftImage<uint16> > > images;///< this vector holds the actual image data, it is populated by load_images
 
   vector<SwiftImage<uint16> >          reference_images;
-  
+
   ostream &err;                               ///< Error output will be writen here, set to cerr in constructor default
   Timetagger m_tt;                            ///< Timetag-generating object
-  
+
 };
 
 // This needs to be included here because this is a template class

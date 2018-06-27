@@ -41,17 +41,17 @@ using namespace std;
 template <class _prec=uint16,class _threshold_prec=uint16,class _image_cluster_prec=double>
 class Segmentation {
 public:
-  
+
   Segmentation(bool use_watershed_in=false, ostream &err_in=std::cerr) : use_watershed(use_watershed_in), err(err_in) {
   }
 
   SwiftImage<int> rle_lookup(const vector<RLERun<> > &runs,int image_width,int image_height) {
-    
+
     // TODO: These offsets (+200s) should be based on maximum offset trials in image analysis
     SwiftImage<int> lookup(image_width+200,image_height+200,-1);
     lookup.apply_offset(SwiftImagePosition<>(100,100));
 
-    
+
     for(size_t n=0;n<runs.size();n++) {
       int y = runs[n].pos.y;
       for(int x=runs[n].pos.x; x<(runs[n].pos.x+runs[n].length) ;x++) {
@@ -65,10 +65,10 @@ public:
   vector<SwiftImageCluster<_image_cluster_prec> > process(const vector<vector<SwiftImage<_threshold_prec> > > &thresholded,
                                        const vector<vector<SwiftImage<_prec> > >         &images,
                                        int max_cycles=6) {
-    
+
     SwiftImage<int> lookup(images[0][0].image_width()+200,images[0][0].image_height()+200,-1);
     lookup.apply_offset(SwiftImagePosition<>(100,100));
-    
+
     vector<SwiftImageCluster<_image_cluster_prec> > clusters;
 
     if(max_cycles==-1) max_cycles = thresholded[0].size();
@@ -78,10 +78,10 @@ public:
         err << m_tt.str() << "Segmenting: " << base_list[base] << " " << cycle+1 << endl;
 
         // 4. Segment images
-        
+
         // Watershed
         SwiftImage<_threshold_prec> i6 = thresholded[base][cycle];
-        
+
         if(use_watershed) {
           EuclideanDistanceMap<_threshold_prec> edm;
           Watershed<_threshold_prec> wat;
@@ -90,27 +90,28 @@ public:
           SwiftImage<_threshold_prec> i3 = edm.process(thresholded[base][cycle]);
           SwiftImage<_threshold_prec> i4 = inv.process(i3);
           SwiftImage<_threshold_prec> i5 = wat.process(i4);
-        } 
+        }
 
         vector<SwiftImageCluster<_image_cluster_prec> > cur_clusters = process(i6,images,lookup);
 
         clusters.insert(clusters.begin(),cur_clusters.begin(),cur_clusters.end());
-        
+
         err << m_tt.str() << "Cycle " << cycle+1 << " Segmentation complete: " << cur_clusters.size() << " clusters" << endl;
       }
     }
 
     return clusters;
   }
- 
+
   template<class _prec1>
   vector<SwiftImageCluster<_image_cluster_prec> > process(const SwiftImage<_prec1> &source,
                                        const vector<vector<SwiftImage<_prec> > > &images,
                                        SwiftImage<int> &lookup_c
                                       ) {
-   
+
     RunLengthEncode<_prec1> rle;
 
+    // This will connects vertical pixels
     vector<RLERun<> > runs = rle.process(source);
     DSets sets(runs.size());
 
@@ -119,14 +120,15 @@ public:
 
     // Iterate over runs, find adjacent runs in lookup image and join them
     for(vector<RLERun<> >::iterator i = runs.begin();i != runs.end();i++) {
-      
+
       int y = (*i).pos.y;
       for(int x=(*i).pos.x;x < (*i).pos.x+(*i).length;x++) {
-       
+
         if(y-1 >= 0) {
           if(lookup(x,y-1) >= 0) {
             // combine these features
             if(lookup(x,y-1) != lookup(x,y)) {
+              // parent of lookup(x,y) is lookup(x, y-1)
               sets.makeparent(lookup(x,y),lookup(x,y-1));
               x=runs[lookup(x,y-1)].pos.x+runs[lookup(x,y-1)].length;
             }
@@ -136,12 +138,11 @@ public:
     }
 
     // Create a bunch of features
-
     vector<SwiftImageObject<_image_cluster_prec> > features(runs.size(),SwiftImageObject<_image_cluster_prec>());
 
     for(unsigned int n=0;n<runs.size();n++) {
       int c = sets.getparent(n); // getparent returns the canonical element for this set
-
+      // This will connect horizontal pixels
       features[c].pixels.push_back(runs[n]);
     }
 
@@ -150,13 +151,13 @@ public:
     for(typename vector<SwiftImageObject<_image_cluster_prec> >::iterator i=features.begin();i != features.end();i++) {
       if((*i).pixels.size() != 0) features_real.push_back(*i);
     }
-   
+
     // Create clusters
     //TODO: the logic here isn't entirely correct... we could end up not adding a new cluster, but removing an existing one
 
     vector<SwiftImageCluster<_image_cluster_prec> > clusters;
     for(typename vector<SwiftImageObject<_image_cluster_prec> >::iterator i=features_real.begin();i != features_real.end();i++) {
-      
+
       vector<int> overlaps = (*i).find_in_image(lookup_c);
 
       if(overlaps.size() == 0) {
@@ -166,8 +167,8 @@ public:
         clusters.push_back(c);
       }
     }
-   
-    return clusters; 
+
+    return clusters;
   }
 
 private:

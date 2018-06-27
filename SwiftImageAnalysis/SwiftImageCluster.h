@@ -24,6 +24,7 @@
 #include <cstddef>
 #include <iostream>
 #include <vector>
+#include <cstdlib>
 #include "SwiftImageObject.h"
 #include "ReadIntensity.h"
 
@@ -34,7 +35,7 @@ using namespace std;
 template<class _prec=double>
 class SwiftImageCluster {
 
-public:  
+public:
   typedef int base_type;
   static const int base_a       = 0;
   static const int base_c       = 1;
@@ -63,27 +64,27 @@ public:
 
   template<class _iprec>
   typename Cluster<_prec>::signal_vec_type get_intensity_sequence(const vector<vector<SwiftImage<_iprec> > > &images) const {
-    
+
     typename Cluster<_prec>::signal_vec_type intensity_sequence;
 
     for(size_t cycle=0;cycle < images[0].size();cycle++) {
 
       ReadIntensity<_prec> r(0,0,0,0);
       for(int base=0;base<ReadIntensity<_prec>::base_count;base++) {
-        
+
         _prec intensity=0;
         _prec maxintensity=0;
         bool first=true;
         r.bases_offedge[base] = true;
-        
+
         bool onimage=false;
         intensity = reference_position.get_intensity(images[base][cycle],onimage);
-        
+
         if((intensity > maxintensity) || first) {
           maxintensity = intensity;
           first=false;
         }
-          
+
         if(onimage) {
           r.bases_offedge[base] = false;
         }
@@ -95,7 +96,7 @@ public:
 
     return intensity_sequence;
   }
-  
+
   template<class _iprec>
   int similarity(const SwiftImageCluster<_prec> &other,const vector<vector<SwiftImage<_iprec> > > &images) const {
 
@@ -106,7 +107,7 @@ public:
     for(int n=0;n<iseq.size();n++) {
       if(iseq[n].max_base() == mseq[n].max_base()) similar++;
     }
-  
+
     return similar;
   }
 
@@ -119,7 +120,7 @@ public:
       double p = iseq[n].purity();
       if(p < min_p) min_p = p;
     }
-  
+
     return min_p;
   }
 
@@ -142,7 +143,7 @@ public:
   bool isvalid() {
     return m_valid;
   }
-  
+
   /// Gets an estimation of the noise in the region containing the cluster.
   template<class _iprec>
   typename Cluster<_prec>::noise_vec_type get_noise_sequence(const vector<vector<SwiftImage<_iprec> > > &images) const {
@@ -154,7 +155,7 @@ public:
         noise_sequence.push_back(r);
       // }
     }
-      
+
     //TODO: Implement noise estimates
     return noise_sequence;
   }

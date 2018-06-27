@@ -1,0 +1,11 @@
+chmod 666    SwiftImageAnalysis/ImageAnalysis.cpp
+chmod 666    SwiftImageAnalysis/ImageAnalysis.h
+chmod 666    SwiftImageAnalysis/MorphologicalErosion.h
+chmod 666    SwiftImageAnalysis/SwiftImage.h
+chmod 666    SwiftImageAnalysis/SwiftImageCluster.h
+chmod 666    include/BaseProbability.h
+chmod 666    include/Cluster.h
+chmod 666    include/ProbabilitySequence.h
+chmod 666    include/plotfunctions.h
+chmod 666    runswifttile
+chmod 666    swift_main.cpp

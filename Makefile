@@ -8,43 +8,55 @@ SWIFT_IMAGEANALYSIS = $(SWIFT_IMAGEANALYSIS_H)/*.h \
 
 # TODO: Above list of dependencies is not complete
 
-CPPFILES = ./include_lib/gnuplot_i.cc ./SwiftImageAnalysis/SwiftFFT.cpp 
+CPPFILES = ./include_lib/gnuplot_i.cc ./SwiftImageAnalysis/SwiftFFT.cpp
 
 HFILES = ./CrossTalkCorrection/*.cpp ./CrossTalkCorrection/*.h ./include/CommandLine.h
 
+# include hearder files
 IFILES = -I./Filters -I./SmallAlign -I./MockImageAnalysis -I./BaseCaller \
          -I./include -I./CrossTalkCorrection -I./PhasingCorrection \
          -I./include_lib -I /software/solexa/include \
 	 -I./Reporting
 
+# include external libraries
 LFILES       = -L /software/solexa/lib -lgsl -lgslcblas -lfftw3f -ltiff
 SWIFT_LFILES = -L /software/solexa/lib -lgsl -lgslcblas -lfftw3 -ltiff
 
-CPPFLAGS = $(SVNDEF) -O3 -DHAVE_FFTW -DFTYPE=float -Wall -Wsign-compare -Wpointer-arith
+# Change: -g added so that debugging for gdb can work
+# Change: -std=c++ added to force compiling for C++11 standard
+# Change: -Og, optimized execution without inteferring the debugging infos
+# Change: -fkeep-inline-functions keep inline functions as real functions. Larger executable but easier debugging
+CPPFLAGS = $(SVNDEF) -O3 -DHAVE_FFTW -DFTYPE=float -g -Og -std=c++11 -Wall -Wsign-compare -Wpointer-arith -fkeep-inline-functions
+# Original:
+# CPPFLAGS = $(SVNDEF) -O3 -DHAVE_FFTW -DFTYPE=float -std=c++11 -Wall -Wsign-compare -Wpointer-arith
+
 #CPPFLAGS = -g -DHAVE_FFTW -Wpointer-arith
-INTEL_CPPFLAGS = $(SVNDEF) -O3 -xT 
+INTEL_CPPFLAGS = $(SVNDEF) -O3 -xT
 
 ####all: swift swift_im03 swift_im04 swift_driver swift_testfile swift_window_driver
-all: swift 
+all: swift
 
-swift_im03: $(CPPFILES) $(IMAGEANALYSIS0.3) $(HFILES) swift_main.cpp 
+swift_im03: $(CPPFILES) $(IMAGEANALYSIS0.3) $(HFILES) swift_main.cpp
 	    g++ swift_main.cpp  $(IMAGEANALYSIS0.3) $(CPPFLAGS) -I./ImageAnalysis0.3 $(IFILES) $(LFILES) $(CPPFILES) -o swift_im03
 
-swift_im04: $(CPPFILES) $(IMAGEANALYSIS0.4) $(HFILES) swift_main.cpp 
+swift_im04: $(CPPFILES) $(IMAGEANALYSIS0.4) $(HFILES) swift_main.cpp
 	    g++ swift_main.cpp  $(IMAGEANALYSIS0.4) $(CPPFLAGS) -I./ImageAnalysis0.4 $(IFILES) $(LFILES) $(CPPFILES) -o swift_im04
 
-swift: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_main.cpp 
+swift: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_main.cpp
 	g++ swift_main.cpp $(CPPFLAGS) -I./SwiftImageAnalysis $(IFILES) $(SWIFT_LFILES) $(CPPFILES) -o $@
 
-swift_intel: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_main.cpp 
+swift_intel: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_main.cpp
 	icpc swift_main.cpp $(INTEL_CPPFLAGS) -I./SwiftImageAnalysis $(IFILES) $(SWIFT_LFILES) $(CPPFILES) -o swift
 
-swift_driver: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_driver.cpp 
+swift_driver: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_driver.cpp
 	g++ swift_driver.cpp $(CPPFLAGS) -I./SwiftImageAnalysis $(IFILES) $(SWIFT_LFILES) -o $@
 
-swift_testfile: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_testfile.cpp 
+swift_testfile: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_testfile.cpp
 	g++ swift_testfile.cpp $(CPPFLAGS) -I./SwiftImageAnalysis $(IFILES) $(SWIFT_LFILES) -o $@
 
-swift_window_driver: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_window_driver.cpp 
+swift_window_driver: $(CPPFILES) $(HFILES) $(SWIFT_IMAGEANALYSIS) swift_window_driver.cpp
 	g++ swift_window_driver.cpp $(CPPFLAGS) -I./SwiftImageAnalysis $(IFILES) $(SWIFT_LFILES) -o $@
 
+# Added so that "make clean" command would clean swift and force a remake next time   --Arthur 6/14/2018
+clean:
+	rm -rf swift

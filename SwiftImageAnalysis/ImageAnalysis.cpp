@@ -44,7 +44,7 @@ inline void ImageAnalysis<_prec,_threshold_prec>::initialise() {
 
   params_threshold_window             = parms->get_parm_as<int>("threshold_window");
   params_threshold                    = parms->get_parm_as<_prec>("threshold");
-  
+
   params_correlation_method           = ChannelOffsets<uint16>::fft;
   params_correlation_subimages        = parms->get_parm_as<int>("correlation_subimages");
   params_correlation_subsubimages     = parms->get_parm_as<int>("correlation_subsubimages");
@@ -55,7 +55,7 @@ inline void ImageAnalysis<_prec,_threshold_prec>::initialise() {
   params_correlation_threshold_window = parms->get_parm_as<int>("correlation_threshold_window");
   params_correlation_threshold        = parms->get_parm_as<_prec>("correlation_threshold");
   params_correlation_use_bases        = parms->get_parm_as<int>("correlation_use_bases");
-  
+
   params_background_subtraction_enabled= parms->get_parm_as<bool>("background_subtraction_enabled");
   params_background_subtraction_window= parms->get_parm_as<int>("background_subtraction_window");
 
@@ -90,12 +90,12 @@ vector<string> ImageAnalysis<_prec,_threshold_prec>::read_image_list(string imag
     err << m_tt.str() << "ERROR in ImageAnalysis: Could not open image filelist at: " << image_filelist_filename << endl;
     return list; // I should probably throw an exception or pass a return code here
   }
-  
+
   while(!image_filelist.eof()) {
     string current_line;
 
     getline(image_filelist, current_line);
-  
+
     if(!image_filelist.eof()) {
       list.push_back(current_line);
     }
@@ -111,7 +111,7 @@ bool ImageAnalysis<_prec,_threshold_prec>::load_images(int load_first    ,
   // Clear out old images
   for(size_t n=0;n<images.size();n++) {
     images[n].clear();
-  } 
+  }
 
   Memstats mem ("Image_Analysis::load_images");                    ///< Memory usage sampler
 
@@ -119,7 +119,7 @@ bool ImageAnalysis<_prec,_threshold_prec>::load_images(int load_first    ,
   for(vector<vector<string> >::const_iterator i = image_filenames.begin()+1;i != image_filenames.end();i++) {
     if((*i).size() != (*(i-1)).size()) return false;
   }
-  
+
   // We must have at least one channel (base)
   if(image_filenames.size() < 1) return false;
 
@@ -150,11 +150,15 @@ bool ImageAnalysis<_prec,_threshold_prec>::load_images(int load_first    ,
                      end_x,
                      start_y,
                      end_y);
-        
-        si.clear_offset(); 
+
+        si.clear_offset();
       }
+      // hacking in to get image size information for quick report  --Arthu 6/21/2018
+      image_size_x = si.image_width();
+      image_size_y = si.image_height();
+
       cout << endl;
-      
+
       images[n].push_back(si);
     }
   }
@@ -178,18 +182,18 @@ bool ImageAnalysis<_prec,_threshold_prec>::load_images(int load_first    ,
 
 template<class _prec,class _threshold_prec>
 vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmentation_and_registration(const vector<vector<SwiftImage<> > > &images) {
-    
+
   vector<vector<SwiftImage<_threshold_prec> > > images_thresholded(base_num,vector<SwiftImage<_threshold_prec> >(params_segment_cycles,SwiftImage<_threshold_prec>(0,0)));
 
   int base_num     = images.size();
 
   // Threshold images to identify clusters
   NWThreshold<uint16,_threshold_prec> nwt(params_threshold_window,                      // Window size +/- this value
-                                          params_threshold,                             // Threshold            
+                                          params_threshold,                             // Threshold
                                           60000,                                        // Foreground pixels become this
                                           0,                                            // Random sampling (0=off)
                                           NWThreshold<uint16>::mask_type_square);       // Mask type
-  
+
   #if defined(_OPENMP)
     #pragma omp parallel for
   #endif
@@ -199,12 +203,12 @@ vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmenta
       nwt.process_square(images[base][cycle],images_thresholded[base][cycle]);
     }
   }
-  
+
   // Segmentation
   Segmentation<uint16,_threshold_prec,_prec> segmenter(params_watershed);
   vector<SwiftImageCluster<_prec> > image_clusters;
   image_clusters = segmenter.process(images_thresholded,images,params_segment_cycles); //2, set from parameter
-  
+
   // Graceful fail if too many clusters identified
   if(image_clusters.size() < 1000) {
     err << "Too few clusters were generated, analysis can not continue. (less than 1000 clusters)" << endl;
@@ -213,7 +217,7 @@ vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmenta
 
 
   if(image_clusters.size() > static_cast<unsigned int>(params_cluster_limit)) {
-  
+
     // We've gone over the cluster limit, we can process this data so throw an exception
 
 
@@ -223,10 +227,10 @@ vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmenta
 
     exit(1);
   }
-  
+
   if(image_clusters.size() == 0) {
 
-    err << "No clusters were identified! Processing will now stop." << endl;  
+    err << "No clusters were identified! Processing will now stop." << endl;
 
     exit(1);
   }
@@ -236,9 +240,9 @@ vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmenta
 
 template<class _prec,class _threshold_prec>
 void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
-  
+
   bool unified_threshold = false;
-  
+
   vector<vector<SwiftImage<_threshold_prec> > > images_thresholded;
 
   if(params_background_subtraction_enabled == false) unified_threshold = false;
@@ -252,7 +256,7 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
       images_thresholded.push_back(vector<SwiftImage<_threshold_prec> >());
       for(size_t cycle=0;cycle<images[base].size();cycle++) {
         images_thresholded[base].push_back(SwiftImage<_threshold_prec>(0,0));
-        
+
         SwiftImage<> background_image(0,0);
         cerr << "Combined Threshold/Background Subtraction for image: " << base << " " << cycle << endl;
         n1_threshold.process_square(images[base][cycle],
@@ -268,9 +272,9 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
     // Background subtraction
     MorphologicalErosion<uint16> morph_open(params_background_subtraction_window,false,MorphologicalErosion<uint16>::mask_type_square);
 
-    
+
     int total_cycles = images[0].size();
-    
+
     #if defined(_OPENMP)
       #pragma omp parallel for
     #endif
@@ -292,7 +296,7 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
                                                             params_correlation_cc_subimage_multiplier,
                                                             params_correlation_reference_cycle,
                                                             params_correlation_aggregate_cycle,
-                                                            params_correlation_threshold_window, 
+                                                            params_correlation_threshold_window,
                                                             params_correlation_threshold,
                                                             params_correlation_median_channels,
                                                             unified_threshold,
@@ -301,13 +305,13 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
 
     } else {
       err << "allocating thresholder standard" << endl;
-      channel_offsets_standard = new ChannelOffsets<uint16>(params_correlation_method, 
+      channel_offsets_standard = new ChannelOffsets<uint16>(params_correlation_method,
                                                    params_correlation_subimages,
                                                    params_correlation_subsubimages,
-                                                   params_correlation_cc_subimage_multiplier,
+                                                   1,
                                                    params_correlation_reference_cycle,
                                                    params_correlation_aggregate_cycle,
-                                                   params_correlation_threshold_window, 
+                                                   params_correlation_threshold_window,
                                                    params_correlation_threshold,
                                                    params_correlation_median_channels,
                                                    unified_threshold,
@@ -326,6 +330,7 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
     channel_offsets_standard->set_correlation_reference_cycle(params_correlation_reference_cycle);
     channel_offsets_standard->process(images);
     images_thresholded.clear();
+    // apply_offsets made offsetmap a field in images, so that we don't need channel_offsets_standard any more
     channel_offsets_standard->apply_offset(images);
   }
 
@@ -342,12 +347,15 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
   offsets_xml += "</offsetmaps>\n";
 
   // Dump to screen
+  ofstream tmp_output;
+  tmp_output.open("coordinate.txt");
   for(size_t cycle=0;cycle<images[0].size();cycle++) {
     for(int n=0;n<base_num;n++) {
-      err << "Cycle: " << cycle << " base: " << n << " offsetmap:" << endl;
-      images[n][cycle].dump_offset_map(err);
+      tmp_output << "Cycle: " << cycle << " base: " << n << " offsetmap:" << endl;
+      images[n][cycle].dump_offset_map(tmp_output);
     }
   }
+  tmp_output.close();
 }
 
 template<class _prec,class _threshold_prec>
@@ -356,21 +364,21 @@ void ImageAnalysis<_prec,_threshold_prec>::build_clusters(vector<Cluster<_prec> 
                                                          ) {
   err << m_tt.str() << "Total Clusters: " << image_clusters.size() << endl;
   // 9. Save intensities and noise estimates to cluster objects
-  
+
   for(typename vector<SwiftImageCluster<_prec> >::iterator i=image_clusters.begin();i != image_clusters.end();i++) {
-    SwiftImagePosition<> pos = (*i).get_position(); 
-    
+    SwiftImagePosition<> pos = (*i).get_position();
+
     Cluster<_prec> c;
     ClusterPosition<> p(pos.x,pos.y);
     c.set_position(p);
-    
+
     // Intensity
     typename Cluster<_prec>::signal_vec_type ints = (*i).get_intensity_sequence(images);
     typename Cluster<_prec>::signal_vec_type &intsig = c.signal("RAW");
     intsig.insert(intsig.begin(),ints.begin(),ints.end());
-   
+
     // Noise
-    if(params_calculate_noise) { 
+    if(params_calculate_noise) {
       typename Cluster<_prec>::noise_vec_type nses = (*i).get_noise_sequence(images);
       typename Cluster<_prec>::noise_vec_type &nsesig = c.noise("RAW");
       nsesig.insert(nsesig.begin(),nses.begin(),nses.end());
@@ -384,17 +392,17 @@ template<class _prec,class _threshold_prec>
 void ImageAnalysis<_prec,_threshold_prec>::extend_clusters(vector<Cluster<_prec> >           &clusters,
                                                            vector<SwiftImageCluster<_prec> > &image_clusters
                                                           ) {
-  
+
   int c=0;
   for(typename vector<SwiftImageCluster<_prec> >::iterator i=image_clusters.begin();i != image_clusters.end();i++) {
-    
+
     // Intensity
     typename Cluster<_prec>::signal_vec_type ints = (*i).get_intensity_sequence(images);
     typename Cluster<_prec>::signal_vec_type &intsig = clusters[c].signal("RAW");
     intsig.insert(intsig.end(),ints.begin(),ints.end());
-   
+
     // Noise
-    if(params_calculate_noise) { 
+    if(params_calculate_noise) {
       typename Cluster<_prec>::noise_vec_type  nses = (*i).get_noise_sequence(images);
       typename Cluster<_prec>::noise_vec_type &nsesig = clusters[c].noise("RAW");
       nsesig.insert(nsesig.end(),nses.begin(),nses.end());
@@ -406,21 +414,21 @@ void ImageAnalysis<_prec,_threshold_prec>::extend_clusters(vector<Cluster<_prec>
 
 template<class _prec,class _threshold_prec>
 void ImageAnalysis<_prec,_threshold_prec>::generate(vector<Cluster<_prec> > &clusters) {
-  
+
   load_images(params_load_cycle,true);
 
   vector<SwiftImageCluster<_prec> > image_clusters;
-  
+
   generate_initial(clusters,image_clusters);
 
   for(;images[0].size() != 0;) {
     load_images(params_load_cycle);
-    
+
     if(images[0].size() != 0) {
       generate_additional(clusters,image_clusters);
     }
   }
- 
+
 
   if(channel_offsets_standard    != NULL) delete channel_offsets_standard;
   if(channel_offsets_thresholded != NULL) delete channel_offsets_thresholded;
@@ -437,16 +445,16 @@ void ImageAnalysis<_prec,_threshold_prec>::generate_initial(vector<Cluster<_prec
 
   Memstats mem ("Image_Analysis::generate");                // Time the whole call
   Memstats mem_misc;                                        // Timer for intermediate steps, gets reused
-  
-  
+
+
   // Correlate and Background Subtract
   err << "Correlation" << endl;
   correlate_and_background_subtract();
-  
+
   // Segmentation
   err << "Segmentation" << endl;
   image_clusters = segmentation_and_registration(images);
- 
+
   // Build clusters
   err << "Building clusters" << endl;
   build_clusters(clusters,image_clusters);
@@ -456,7 +464,7 @@ void ImageAnalysis<_prec,_threshold_prec>::generate_initial(vector<Cluster<_prec
 template<class _prec,class _threshold_prec>
 void ImageAnalysis<_prec,_threshold_prec>::generate_additional(vector<Cluster<_prec> >           &clusters,
                                                                vector<SwiftImageCluster<_prec> > &image_clusters) {
-  
+
   // Correlate and Background Subtract
   for(size_t n=0;n<images.size();n++) {
     images[n].push_back(reference_images[n]);
@@ -464,12 +472,12 @@ void ImageAnalysis<_prec,_threshold_prec>::generate_additional(vector<Cluster<_p
   params_correlation_reference_cycle = images[0].size()-1;
 
   correlate_and_background_subtract();
-  
+
   // Delete final cycle
   for(size_t n=0;n<images.size();n++) {
     images[n].erase(images[n].begin()+images[n].size()-1,images[n].end());
   }
- 
+
   // Extend
   extend_clusters(clusters,image_clusters);
 }

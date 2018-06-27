@@ -38,20 +38,20 @@ public:
 
   MorphologicalErosion(int window_size_in=4,
                       bool use_second_in=false,
-                      bool mask_type_in=mask_type_square) 
+                      bool mask_type_in=mask_type_square)
                      : window_size(window_size_in),
-                       use_second(use_second_in),
+                       use_second(use_second_in),           // use the second smallest value rather than the smallest
                        mask_type(mask_type_in) {
-    
+
     if(mask_type==mask_type_square) mask_square();
     if(mask_type==mask_type_circle) mask_circle();
     if(mask_type==mask_type_random) mask_random(10);
-  
+
   }
 
   bool mask_circle() {
     // Generate mask image, a circular mask
-    
+
     mask.clear();
     mask.insert(mask.begin(),(window_size*2)+1,vector<bool>((window_size*2)+1,false));
 
@@ -64,7 +64,7 @@ public:
       mask[x+window_size][y1+window_size]=true;
       mask[x+window_size][y2+window_size]=true;
     }
-    
+
     //Fill it in
     bool set=false;
     for(int x=0;x<(window_size*2)+1;x++) {
@@ -83,29 +83,29 @@ public:
       }
       set=false;
     }
-  
+
     return true;
   }
 
   bool mask_square() {
     // Generate mask image, a square mask
-    
+
     mask.clear();
     mask.insert(mask.begin(),(window_size*2)+1,vector<bool>((window_size*2)+1,true));
-  
+
     return true;
   }
 
   bool mask_random(int num) {
     // Generate mask image, a random mask
-    
+
     mask.clear();
     mask.insert(mask.begin(),(window_size*2)+1,vector<bool>((window_size*2)+1,false));
 
     for(int n=0;n<num;n++) {
       int x=rand()%(window_size*2);
       int y=rand()%(window_size*2);
-      
+
       mask[x][y] = true;
     }
 
@@ -113,24 +113,24 @@ public:
   }
 
   SwiftImage<_prec> process(const SwiftImage<_prec> &source) {
-    
+
     SwiftImage<_prec> dest = source;
     dest.clear_offset();
     if (mask_type != mask_type_square || use_second) {
       dest = (process_generic(source));    // do it the hard way
     } else {
-      
+
       SwiftWindow<> swin (window_size);
-      dest = (swin.window_square(source, SwiftWindow<>::find_min)); 
+      dest = (swin.window_square(source, SwiftWindow<>::find_min));
     }
 
     dest.copy_offset(source);
 
     return dest;
   }
-    
+
   SwiftImage<_prec> process_generic (const SwiftImage<_prec> &source) {
-  
+
     SwiftImage<_prec> dest(source.image_width(),source.image_height());
 
     // For each pixel, examine a window_size by window_size window around the pixel,
@@ -138,13 +138,13 @@ public:
 
     for(int x=0;x<source.image_width();x++) {
       for(int y=0;y<source.image_height();y++) {
-       
+
         _prec oldmin = source(x,y);
         _prec minval = source(x,y);
 
         for(int cx=x-window_size;cx<=(x+window_size);cx++) {
           for(int cy=y-window_size;cy<=(y+window_size);cy++) {
-            
+
             // Only use if set in mask
             if(mask[cx-x+window_size][cy-y+window_size]) {
               // Only use pixel if in image
@@ -164,7 +164,7 @@ public:
                    else dest(x,y) = oldmin;
       }
     }
-    
+
     return dest;
   }
 

@@ -53,12 +53,12 @@ template<class _prec=uint16,class _threshold_prec=uint16>
 class ChannelOffsets {
 
 public:
-  
+
   typedef enum {
-                simple,              ///< Simple matrix multiply method 
+                simple,              ///< Simple matrix multiply method
                 fft,                 ///< Use fft to perform phase correlation
                 validate_fft         ///< Use simple and fft, validate results
-               } correlation_type; 
+               } correlation_type;
 
   ChannelOffsets(correlation_type correlation_method_in,               ///< Use FFT of naive cross-correlation
                  int              subimages,                           ///< Number of subimages to use (subimage gets different offset)
@@ -71,7 +71,7 @@ public:
                  bool             median_channels,                     ///< Take median of channel offsets? (per cross-channel)
                  bool             prethresholded,                      ///< Input images are already thresholded?
                  int              use_bases=-1                         ///< Use how many bases (-1 for all)
-                )         
+                )
                 : crosschannel_offsets_cache(false),
                   crosschannel_offset_cache_offset1(subimages*cc_subimage_multiplier,vector<SwiftImagePosition<> >(subimages*cc_subimage_multiplier,SwiftImagePosition<>())),
                   crosschannel_offset_cache_offset2(subimages*cc_subimage_multiplier,vector<SwiftImagePosition<> >(subimages*cc_subimage_multiplier,SwiftImagePosition<>())),
@@ -87,17 +87,20 @@ public:
                   params_median_channels(median_channels),
                   params_prethresholded(prethresholded),
                   params_use_bases(use_bases) {
-    
+    if (params_subimages != 1) {
+      cerr << "Something is wrong";
+      exit(1);
+    }
     if(params_use_bases == -1) params_use_bases = ReadIntensity<_prec>::base_count;
   }
-  
+
   template<class _prec1,class _prec2>
   SwiftImagePosition<> find_image_offset_fft(const SwiftImage<_prec1> &image1_in, const SwiftImage<_prec2> &image2_in) {
-    
+
     //TODO: SwiftFFT should be able to take different types of SwiftImage
     SwiftImage<uint16> image1(0,0);
     image1 = image1_in;
-    
+
     SwiftImage<uint16> image2(0,0);
     image2 = image2_in;
 
@@ -105,29 +108,29 @@ public:
        image1.image_width(), image1.image_height(),
        image1.image_width(), image1.image_height()    // zero-fill to twice the size
     );
-    
+
     ref.load_SwiftImage (image1);
     ref.transform_image ();
-    
+
     // Set up a swiftFFT object to be re-used in the loop below
     SwiftFFT target (
        image2.image_width(), image2.image_height(),
        image2.image_width(), image2.image_height()    // zero-fill to twice the size
     );
-    
+
     target.load_SwiftImage (image2, 0-image2.min_x(), 0-image2.min_y());
     target.transform_image ();
     target.cross_correlate (ref);
     SwiftImagePosition<> offset = target.get_offset();
-    
+
     return offset;
   }
-  
+
   template<class _prec2>
   SwiftImagePosition<> find_image_offset_fft(const SwiftFFT &ref, const SwiftImage<_prec2> &image2_in) {
-    
+
     //TODO: SwiftFFT should be able to take different types of SwiftImage
-    
+
     SwiftImage<uint16> image2(0,0);
     image2 = image2_in;
 
@@ -136,15 +139,15 @@ public:
        image2.image_width(), image2.image_height(),
        image2.image_width(), image2.image_height()    // zero-fill to twice the size
     );
-    
+
     target.load_SwiftImage (image2, 0-image2.min_x(), 0-image2.min_y());
     target.transform_image ();
     target.cross_correlate (ref);
     SwiftImagePosition<> offset = target.get_offset();
-    
+
     return offset;
   }
-  
+
   vector<SwiftImage<_threshold_prec> > split_images_unsort(const SwiftImage<_threshold_prec> &image,int subimages_num,double increment) {
 
     vector<SwiftImage<_threshold_prec> > subimages;
@@ -165,7 +168,7 @@ public:
 
         int x_start   = static_cast<int>(x*static_cast<double>(crop_size_x));
         int y_start   = static_cast<int>(y*static_cast<double>(crop_size_y));
-        
+
         subimages.push_back(image.crop(x_start,x_start+crop_size_x,y_start,y_start+crop_size_y));
         subimages[subimages.size()-1].clear_offset();
 
@@ -210,10 +213,10 @@ public:
 
   vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > correlation_initial_split(const vector<vector<SwiftImage<_prec> > > &images) {
     vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > sub_images;
-    
+
     // Thresholding
     NWThreshold<_prec>     n1_threshold(params_threshold_window,params_threshold);
-    
+
     // Return vector is base,cycle,x,y.
 
     // Break image in to subimages
@@ -222,7 +225,7 @@ public:
       sub_images.push_back(vector<vector<vector<SwiftImage<_threshold_prec> > > >());
 
       for(size_t cycle=0;cycle<images[base].size();cycle++) {
-        
+
         // Threshold the image
         SwiftImage<_threshold_prec> image(0,0);
         if(!params_prethresholded) {
@@ -243,11 +246,11 @@ public:
   void correlate_within_channel(vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > &sub_images) {
 
     for(int base=0;base<params_use_bases;base++) {
-      
-      cerr << "Correlating base: " << base << endl; 
+
+      cerr << "Correlating base: " << base << endl;
       vector<vector<vector<SwiftFFT *> > > subsubimgs_ref(sub_images[base][0].size(),
              vector<vector<SwiftFFT *> >  (sub_images[base][0][0].size()));
-     
+
       // Prepare reference FFTs
       for(size_t x=0;x<sub_images[base][0].size();x++) {
         for(size_t y=0;y<sub_images[base][0][x].size();y++) {
@@ -271,7 +274,7 @@ public:
             // hmm...
             sub_images[base][cycle][x][y].clear_offset();
             sub_images[base][params_reference_cycle][x][y].clear_offset();
-            
+
             vector<int> subsub_offsets_x;
             vector<int> subsub_offsets_y;
             vector<int> subsub_score;
@@ -288,11 +291,11 @@ public:
 
               SwiftImagePosition<> offset = find_image_offset_fft(*(subsubimgs_ref[x][y][ss_n]),subsubimgs[ss_n]);
               subsubimgs[ss_n].apply_offset(offset);
-              
+
               subsub_offsets_x.push_back(offset.x);
               subsub_offsets_y.push_back(offset.y);
             }
-            
+
             vector<int> subsub_offsets_x_clean;
             vector<int> subsub_offsets_y_clean;
             for(size_t n=0;n<subsub_offsets_x.size();n++) { cerr << subsub_offsets_x[n] << "," << subsub_offsets_y[n] << "  "; }
@@ -312,13 +315,13 @@ public:
 
             sort(subsub_offsets_x_clean.begin(),subsub_offsets_x_clean.end());
             sort(subsub_offsets_y_clean.begin(),subsub_offsets_y_clean.end());
-            
+
             cerr << "Pass1 Using offset: " << subsub_offsets_x_clean[subsub_offsets_x_clean.size()/2] << "," << subsub_offsets_y_clean[subsub_offsets_y_clean.size()/2] << endl;
-            sub_images[base][cycle][x][y].apply_offset(SwiftImagePosition<>(subsub_offsets_x_clean[subsub_offsets_x_clean.size()/2],subsub_offsets_y_clean[subsub_offsets_y_clean.size()/2])); 
+            sub_images[base][cycle][x][y].apply_offset(SwiftImagePosition<>(subsub_offsets_x_clean[subsub_offsets_x_clean.size()/2],subsub_offsets_y_clean[subsub_offsets_y_clean.size()/2]));
           }
         }
       }
-      
+
       for(size_t x=0;x<subsubimgs_ref.size();x++) {
         for(size_t y=0;y<subsubimgs_ref[x].size();y++) {
           for(size_t n=0;n<subsubimgs_ref[x][y].size();n++) {
@@ -328,15 +331,15 @@ public:
       }
     }
   }
-    
+
   // Median channels
   void median_channel_offsets(vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > &sub_images) {
     int base_num               = sub_images.size();
-    
+
     for(size_t cycle=0;cycle<sub_images[0].size();cycle++) {
       for(size_t x=0;x<sub_images[0][cycle].size();x++) {
         for(size_t y=0;y<sub_images[0][cycle][x].size();y++) {
-          
+
           vector<int> x_offsets;
           vector<int> y_offsets;
 
@@ -376,9 +379,9 @@ public:
                                             ) {
     // This rethresholding should be optimised out.
     NWThreshold<_prec>     n1_threshold(params_threshold_window,params_threshold);
-    
+
     int base_num               = images.size();
-    
+
     if(params_cc_subimage_multiplier > 1) {
       // Resplit the original images based on the new size, apply the offsets calculated above to these new images.
       // resplit
@@ -389,7 +392,7 @@ public:
         sub_images2.push_back(vector<vector<vector<SwiftImage<_threshold_prec> > > >());
 
         for(size_t cycle=0;cycle<images[base].size();cycle++) {
-          
+
           // Threshold the image
           SwiftImage<_threshold_prec> image(0,0);
           if(!params_prethresholded) {
@@ -407,7 +410,7 @@ public:
       // apply offsets
       for(size_t base=0;base<sub_images2.size();base++) {
         for(size_t cycle=0;cycle<sub_images2[base].size();cycle++) {
-        
+
           for(size_t x=0;x<sub_images2[base][cycle].size();x++) {
             for(size_t y=0;y<sub_images2[base][cycle][x].size();y++) {
               sub_images2[base][cycle][x][y].copy_offset(sub_images[base][cycle][x/params_cc_subimage_multiplier][y/params_cc_subimage_multiplier]);
@@ -415,19 +418,19 @@ public:
           }
         }
       }
-      
+
       sub_images = sub_images2;
     }
 
   }
-    
+
   void correlate_cross_channel_use_cache(vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > &sub_images) {
-    
+
     int base_num               = sub_images.size();
     int cycle_num              = sub_images[0].size();
     size_t subimages_cc = params_subimages * params_cc_subimage_multiplier;
 
-    
+
     // This could be moved elsewhere.
     vector<vector<vector<SwiftImagePosition<> > > > crosschannel_offset_cache(base_num,vector<vector<SwiftImagePosition<> > >(subimages_cc,vector<SwiftImagePosition<> >(subimages_cc)));
 
@@ -436,12 +439,12 @@ public:
       for(size_t y=0;y<subimages_cc;y++) {
         crosschannel_offset_cache[1][x][y] = crosschannel_offset_cache_offset1[x][y];
         crosschannel_offset_cache[3][x][y] = crosschannel_offset_cache_offset2[x][y];
-        
+
         crosschannel_offset_cache[2][x][y] += crosschannel_offset_cache_offset3[x][y];
         crosschannel_offset_cache[3][x][y] += crosschannel_offset_cache_offset3[x][y];
       }
     }
-    
+
     offsetmaps.clear();
     offsetmaps = vector<vector<vector<vector<SwiftImagePosition<> > > > >(base_num,
                         vector<vector<vector<SwiftImagePosition<> > > >  (cycle_num, // num cycles
@@ -459,7 +462,7 @@ public:
         }
       }
     }
-  } 
+  }
 
 
   vector<vector<vector<SwiftImage<_threshold_prec> > > > build_channel_reference(const vector<vector<vector<vector<SwiftImage<_threshold_prec> > > > > &sub_images) {
@@ -467,7 +470,7 @@ public:
     int base_num               = sub_images.size();
     // size_t subimages_cc = params_subimages * params_cc_subimage_multiplier;
 
-    vector<vector<vector<SwiftImage<_threshold_prec> > > > 
+    vector<vector<vector<SwiftImage<_threshold_prec> > > >
       reference_image(base_num,vector<vector<SwiftImage<_threshold_prec> > >(sub_images[0][0].size(),
                                       vector<SwiftImage<_threshold_prec> >  (sub_images[0][0][0].size(),SwiftImage<_threshold_prec>(0,0))));
 
@@ -484,7 +487,7 @@ public:
       // For each subimage, generate a reference against this cycle
       size_t aggregate_cycle = params_aggregate_cycle;
       if(aggregate_cycle > sub_images[0].size()) {
-        aggregate_cycle = sub_images[0].size()-1; 
+        aggregate_cycle = sub_images[0].size()-1;
       }
 
       for(size_t cycle=0;cycle<=aggregate_cycle;cycle++) {
@@ -500,11 +503,11 @@ public:
 
       for(size_t x=0;x<reference_image[base].size();x++) {
         for(size_t y=0;y<reference_image[base][x].size();y++) {
-          
+
           reference_image[base][x][y] = reference_image[base][x][y].crop(sub_images[base][0][x][y].min_x(),
                                                                          sub_images[base][0][x][y].max_x(),
                                                                          sub_images[base][0][x][y].min_y(),
-                                                                         sub_images[base][0][x][y].max_y()); 
+                                                                         sub_images[base][0][x][y].max_y());
           reference_image[base][x][y].clear_offset();
         }
       }
@@ -526,13 +529,13 @@ public:
         //SwiftImagePosition<> offset1 = reference_image[0][x][y].find_image_offset(reference_image[1][x][y],10);
         SwiftImagePosition<> offset1 = find_image_offset_fft(reference_image[0][x][y],reference_image[1][x][y]);
         reference_image[1][x][y].apply_offset(offset1);
-        
+
         cerr << "Offset 0 1: " << offset1.x << "," << offset1.y << endl;
 
         //SwiftImagePosition<> offset2 = reference_image[2][x][y].find_image_offset(reference_image[3][x][y],10);
         SwiftImagePosition<> offset2 = find_image_offset_fft(reference_image[2][x][y],reference_image[3][x][y]);
         reference_image[3][x][y].apply_offset(offset2);
-        
+
         cerr << "Offset 2 3: " << offset2.x << "," << offset2.y << endl;
 
         SwiftImage<_prec> join01(0,0);
@@ -542,17 +545,17 @@ public:
         //SwiftImagePosition<> offset3 = join01.find_image_offset(join23,10);
         SwiftImagePosition<> offset3 = find_image_offset_fft(join01,join23);
         join23.apply_offset(offset3);
-        
+
         cerr << "Offset 01 23: " << offset3.x << "," << offset3.y << endl;
 
         combine_reference_image[x][y] = (join01 + join23);
-        
+
         for(size_t cycle=0;cycle<sub_images[1].size();cycle++) sub_images[1][cycle][x][y].apply_offset(offset1);
         for(size_t cycle=0;cycle<sub_images[3].size();cycle++) sub_images[3][cycle][x][y].apply_offset(offset2);
 
         for(size_t cycle=0;cycle<sub_images[2].size();cycle++) sub_images[2][cycle][x][y].apply_offset(offset3);
         for(size_t cycle=0;cycle<sub_images[3].size();cycle++) sub_images[3][cycle][x][y].apply_offset(offset3);
-      
+
         // Cache offset
 
         crosschannel_offset_cache_offset1[x][y] = offset1;
@@ -568,7 +571,7 @@ public:
     cerr << "Generating cross channel offsets" << endl;
 
     vector<vector<vector<SwiftImage<_threshold_prec> > > > reference_images = build_channel_reference(sub_images);
-    
+
     correlate_reference_images_and_apply(reference_images,sub_images);
 
     // New offset map
@@ -591,7 +594,7 @@ public:
   }
 
   void process(const vector<vector<SwiftImage<_prec> > > &images) {
-   
+
     // OpenMP seems to like this being an int
     //int base_num               = images.size();
 
@@ -607,7 +610,7 @@ public:
 
     // Median channels (take median offsets, which makes things more robust).
     if(params_median_channels) median_channel_offsets(sub_images);
-    
+
     // Cross channel correlation starts here
     if(crosschannel_offsets_cache) {
       correlate_cross_channel_use_cache(sub_images);
@@ -635,13 +638,13 @@ public:
   }
 
   vector<vector<vector<vector<SwiftImagePosition<> > > > > offsetmaps;
-  
+
   bool crosschannel_offsets_cache;
   vector<vector<SwiftImagePosition<> > > crosschannel_offset_cache_offset1;
   vector<vector<SwiftImagePosition<> > > crosschannel_offset_cache_offset2;
   vector<vector<SwiftImagePosition<> > > crosschannel_offset_cache_offset3;
-  
-  
+
+
   correlation_type correlation_method;   ///< Which correlation method to use
   int    params_subimages;
   int    params_subsubimages;
@@ -653,9 +656,9 @@ public:
   bool   params_median_channels;                    ///< Take the median of the offsets on each channel (as each should have the same stage movement)
   bool   params_prethresholded;
   int    params_use_bases;
-  
+
 private:
-    
+
   Timetagger m_tt;
   Memstats mem;
 };

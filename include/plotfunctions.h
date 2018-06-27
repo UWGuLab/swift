@@ -30,12 +30,12 @@
 #include "plotfunctions.h"
 
 using namespace std;
-  
+
 void crosstalk_plot(const vector<Cluster<> > &clusters,          ///< Clusters to plot
                     string signalid,                             ///< Which signal id to plot
                     int cycle,ReadIntensity<>::base_type base_x, ///< X Axis base for crosstalk plot
                     ReadIntensity<>::base_type base_y,           ///< Y Axis base for crosstalk plot
-                    string plottitle) {                          ///< Plot title/data name  
+                    string plottitle) {                          ///< Plot title/data name
   Gnuplot *g = new Gnuplot(plottitle);
   Gnuplot &crosstalkplot = *g;
   vector<double> plot_x;
@@ -47,19 +47,19 @@ void crosstalk_plot(const vector<Cluster<> > &clusters,          ///< Clusters t
       plot_y.push_back((*i).const_signal(signalid)[cycle].get_base(base_y));
     }
   }
-  
+
   crosstalkplot.set_grid();
   crosstalkplot.reset_plot();
   crosstalkplot.set_style("points");
   crosstalkplot.plot_xy(plot_x,plot_y,plottitle + ReadIntensity<>::base_name[base_x] + "/" + ReadIntensity<>::base_name[base_y]);
-  
+
   // Gnuplot's distructor deletes the plot temp file before Gnuplot has a chance to plot the graph
   // so for the moment I'm not deleting Gnuplot, this sucks and should be fixed.
 }
 
 void plotxy(const vector<double> &plot_x,
             const vector<double> &plot_y,
-            string plottitle) {                          ///< Plot title/data name  
+            string plottitle) {                          ///< Plot title/data name
   Gnuplot *g = new Gnuplot(plottitle);
   Gnuplot &crosstalkplot = *g;
 
@@ -67,8 +67,8 @@ void plotxy(const vector<double> &plot_x,
   crosstalkplot.reset_plot();
   crosstalkplot.set_style("points");
   crosstalkplot.plot_xy(plot_x,plot_y,plottitle);
-  
-  // Gnuplot's distructor deletes the plot temp file before Gnuplot has a chance to plot the graph
+
+  // Gnuplot's destructor deletes the plot temp file before Gnuplot has a chance to plot the graph
   // so for the moment I'm not deleting Gnuplot, this sucks and should be fixed.
 
 }

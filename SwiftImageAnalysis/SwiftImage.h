@@ -57,7 +57,7 @@ public:
     }
     offset_map_enable=false;
   }
-  
+
   SwiftImage(unsigned int x,                ///< X Size
              unsigned int y,                ///< Y Size
              _prec init_val=0,              ///< Initially set all pixels to this
@@ -92,14 +92,14 @@ public:
   inline _prec &operator()(SwiftImagePosition<int> c) {
     cache_max_ok=false;
     bool off_edge=false;
-    return const_cast<_prec &>((*this).at(c.x,c.y,off_edge)); 
+    return const_cast<_prec &>((*this).at(c.x,c.y,off_edge));
   }
- 
+
   inline  _prec &operator()(const int x, const int y) {
     cache_max_ok=false;
     bool off_edge=false;
     return const_cast<_prec &>((*this).at(x,y,off_edge));
-  } 
+  }
 
   inline  const _prec &operator()(const int x, const int y) const {
     bool off_edge=false;
@@ -112,8 +112,8 @@ public:
                            ) {
     cache_max_ok=false;
     return const_cast<_prec &>((*this).at(x,y,off_edge));
-  } 
-  
+  }
+
   inline  const _prec &operator()(const int x, const int y,bool &off_edge) const {
     return (*this).at(x,y,off_edge);
   }
@@ -121,7 +121,7 @@ public:
   /// This is the underlying pixel accessor all const and non-const versions call this.
   // THE AT METHOD
   inline  const _prec &at(const int x, const int y,bool &off_edge) const {
-   
+
     int real_x=0;
     int real_y=0;
 
@@ -136,7 +136,7 @@ public:
       throw out_of_range("Off edge of image");
     }
   }
-  
+
   inline const _prec &operator()(SwiftImagePosition<int> c) const {
     bool off_edge=false;
     return (*this).at(c.x,c.y,off_edge);
@@ -144,7 +144,7 @@ public:
 
   SwiftImage<_prec> operator-(const SwiftImage<_prec> &rhs) const {
     SwiftImage<_prec> ret(0,0);
-    
+
     ret = (*this);
 
     // Images must be of the same size
@@ -161,10 +161,10 @@ public:
 
     return ret;
   }
-  
+
   SwiftImage<_prec> operator/(_prec c) const {
     SwiftImage<_prec> ret(0,0);
-    
+
     ret=(*this);
 
     for(int x=min_x();x<max_x();x++) {
@@ -175,11 +175,11 @@ public:
 
     return ret;
   }
- 
+
 
   SwiftImage<_prec> operator+(_prec c) const {
     SwiftImage<_prec> ret(0,0);
-    
+
     ret = (*this);
 
     for(int x=min_x();x<max_x();x++) {
@@ -198,13 +198,13 @@ public:
       for(int y=min_y();y<max_y();y++) {
         if(rhs.onimage(x,y)) {
           ret(x,y) = (*this)(x,y) + rhs(x,y);
-        } 
+        }
       }
     }
 
     return ret;
   }
-  
+
   SwiftImage<_prec> operator&&(const SwiftImage<_prec> &rhs) const {
     SwiftImage<_prec> ret(0,0);
     ret = (*this);
@@ -221,11 +221,11 @@ public:
 
     return ret;
   }
-  
+
   SwiftImage<_prec> operator/(const SwiftImage<_prec> &rhs) const {
     SwiftImage<_prec> ret(0,0);
     ret= (*this);
-    
+
     // Images must be of the same size
     if(rhs.image_width()  != image_width() ) return ret;
     if(rhs.image_height() != image_height()) return ret;
@@ -242,35 +242,35 @@ public:
 
     return ret;
   }
-  
+
   template<class _prec2>
   void copy_offset(const SwiftImage<_prec2> &other) {
     image_offset_x = other.image_offset_x;
     image_offset_y = other.image_offset_y;
     image_slope_x  = other.image_slope_x;
     image_slope_y  = other.image_slope_y;
-    
+
     offset_map_enable = other.offset_map_enable;
     offset_map        = other.offset_map;
   }
-  
+
   SwiftImage<_prec> &operator=(const SwiftImage<_prec> &rhs) {
     m_image_width  = rhs.m_image_width;
     m_image_height = rhs.m_image_height;
 
     image = rhs.image;
-   
+
     image_offset_x = rhs.image_offset_x;
     image_offset_y = rhs.image_offset_y;
     image_slope_x  = rhs.image_slope_x;
     image_slope_y  = rhs.image_slope_y;
-    
+
     offset_map_enable = rhs.offset_map_enable;
     offset_map        = rhs.offset_map;
 
     return (*this);
   }
- 
+
   //TODO: Consolidate two version of assignment operator
   template<class _prec2>
   SwiftImage<_prec> &operator=(const SwiftImage<_prec2> &rhs) {
@@ -286,13 +286,13 @@ public:
     image_offset_y = rhs.image_offset_y;
     image_slope_x  = rhs.image_slope_x;
     image_slope_y  = rhs.image_slope_y;
-    
+
     offset_map_enable = rhs.offset_map_enable;
     offset_map        = rhs.offset_map;
 
     return (*this);
   }
-  
+
   template<class _prec2>
   SwiftImage<_prec> &copy_with_offset(const SwiftImage<_prec2> &rhs) {
     for(int x=rhs.min_x();x<rhs.max_x();x++) {
@@ -306,11 +306,11 @@ public:
 
   void make_binary(int threshold=0) {
     for(typename vector<_prec>::iterator i=image.begin();i != image.end();i++) {
-      if((*i) > threshold) (*i) = 1; 
+      if((*i) > threshold) (*i) = 1;
                       else (*i) = 0;
     }
   }
-  
+
   void threshold(int thres=0) {
     for(typename vector<_prec>::iterator i=image.begin();i != image.end();i++) {
       if((*i) < thres) (*i) = 0;
@@ -319,25 +319,25 @@ public:
 
   bool inline to_real(int x,int y,int &real_x,int &real_y) const {
     if(offset_map_enable) {
-      
+
       if((x >= 0) && (y >= 0)) { //TODO: Why X/Y greater than 0?
-        
+
         double dbl_subimage_x = static_cast<double>(x)
                              / (static_cast<double>(max_x())
                              /  static_cast<double>(offset_map.size()));
         double dbl_subimage_y = static_cast<double>(y)
                              / (static_cast<double>(max_y())
                              /  static_cast<double>(offset_map[0].size()));
-        
+
         size_t subimage_x = static_cast<size_t>(floor(dbl_subimage_x));
         size_t subimage_y = static_cast<size_t>(floor(dbl_subimage_y));
-        
+
         if(subimage_x == offset_map   .size()) subimage_x=offset_map   .size()-1;
         if(subimage_y == offset_map[0].size()) subimage_y=offset_map[0].size()-1;
-        
+
         real_x = image_offset_x+x+offset_map[subimage_x][subimage_y].x;
         real_y = image_offset_y+y+offset_map[subimage_x][subimage_y].y;
-      
+
       } else {
         real_x = image_offset_x+x+offset_map[0][0].x;  //TODO: do better than this if only 1 is 0.
         real_y = image_offset_y+y+offset_map[0][0].y;
@@ -365,14 +365,14 @@ public:
       return false;
     }
   }
-  
+
   // Really int should be a template argument for position type
   SwiftImagePosition<int> find_image_offset(const SwiftImage<_prec> &in, // Compare to this image
                                             int threshold,               // At most this distance away
                                             int increment=1,             // Use every increment pixels (speeds things up)
                                             int useblock=0               // See multiply_sum_shift
                                            ) const {
- 
+
     if(increment==0) {
       throw (std::invalid_argument("ERROR: Increment to find_image_offset is 0 will loop forever"));
     }
@@ -385,7 +385,7 @@ public:
     bool first=true;
 
     vector<vector<double> > multiply_results((threshold*2)+1,vector<double>((threshold*2)+1,0));
-    
+
 #if defined(_OPENMP)
     #pragma omp parallel for
 #endif
@@ -398,9 +398,9 @@ public:
 
     for(int x_offset=0-threshold;x_offset<threshold;x_offset++) {
       for(int y_offset=0-threshold;y_offset<threshold;y_offset++) {
-        
+
         sum = multiply_results[x_offset+threshold][y_offset+threshold];
-        
+
         if((sum > maxsum) || first) {
           // err << "offset: " << x_offset << "," << y_offset << " sum: " << maxsum << endl;
           maxsum=sum;
@@ -418,7 +418,7 @@ public:
     image_offset_x += offset.x;
     image_offset_y += offset.y;
   }
-  
+
   void apply_offset_slope(const SwiftImagePosition<int>    &offset,
                           const SwiftImagePosition<double> &slope
                          ) {
@@ -430,7 +430,7 @@ public:
   }
 
   int sum() const {
-  
+
     int this_sum=0;
 
     for(int x=min_x();x<max_x();x++) {
@@ -438,7 +438,7 @@ public:
         this_sum += (*this)(x,y);
       }
     }
-  
+
     return this_sum;
   }
 
@@ -456,7 +456,7 @@ public:
 
     _prec maxval = max();
     _prec inmax  = in.max();
-    if(inmax > maxval) maxval = inmax; 
+    if(inmax > maxval) maxval = inmax;
 
     int x_start=min_x();
     int y_start=min_y();
@@ -498,20 +498,20 @@ public:
 
     return ret;
   }
-  
+
   SwiftImage<_prec> operator*(int rhs) const {
     SwiftImage<_prec> ret(image_width(),image_height());
     ret = (*this);
-    
+
     for(size_t n=0;n<ret.image.size();n++) {
      ret.image[n] = ret.image[n]*rhs;
     }
-    
+
     return ret;
   }
 
   SwiftImage<_prec> dilate() {
-    
+
     SwiftImage<_prec> img = (*this);
 
     for(int x=min_x();x<max_x();x++) {
@@ -535,7 +535,7 @@ public:
 
 
   inline _prec max() const {
-   
+
     _prec max=image[0];
 
     for(int x=min_x();x<max_x();x++) {
@@ -573,7 +573,7 @@ public:
                                     int y_max,
                                     int offset_x,
                                     int offset_y) {
-    
+
     SwiftImage<_prec> offseted = (*this);
 
     for(int x=x_min;x<x_max;x++) {
@@ -588,29 +588,30 @@ public:
 
     return offseted;
   }
-  
+
   SwiftImage<_prec> crop(int x_min,int x_max,int y_min,int y_max) const {
-    
+
     int x_size = x_max-x_min;
     int y_size = y_max-y_min;
     SwiftImage<_prec> cropimg(x_size,y_size);
+    // so that cropped image is aligned in place.  --Arthur 6/25/2018
     cropimg.apply_offset(SwiftImagePosition<>(0-x_min,0-y_min));
-    
+
     for(int x=x_min;x<x_max;x++) {
       for(int y=y_min;y<y_max;y++) {
-	cropimg(x,y) = (*this)(x,y);
+	       cropimg(x,y) = (*this)(x,y);
       }
     }
-    
+
     return cropimg;
   }
 
   SwiftImage<_prec> doublesize() {
     image_offset_x=0;
     image_offset_y=0;
-    
+
     SwiftImage<_prec> dimg(image_width()*2,image_height()*2);
-    
+
     for(int x=min_x();x<max_x();x++) {
       for(int y=min_y();y<max_y();y++) {
         dimg(x*2    ,y*2    ) = (*this)(x,y);
@@ -619,12 +620,12 @@ public:
         dimg((x*2)+1,(y*2)+1) = (*this)(x,y);
       }
     }
-    
+
     return dimg;
   }
 
   void apply_offset_map(const vector<vector<SwiftImagePosition<> > > &offset_map_in) {
-    if(offset_map_enable==false) { 
+    if(offset_map_enable==false) {
       offset_map_enable=true;
       offset_map = offset_map_in;
     } else {
@@ -678,7 +679,7 @@ public:
       }
       out << endl;
     }
-    
+
     out << "Y MAP:" << endl;
     for(size_t x=0;x<offset_map.size();x++) {
       for(size_t y=0;y<offset_map[x].size();y++) {
@@ -687,7 +688,7 @@ public:
       out << endl;
     }
   }
-  
+
   string dump_offset_map_xml() {
 
     ostringstream str;
@@ -700,7 +701,7 @@ public:
       str << endl;
     }
     str << "</xmap>" << endl;
-    
+
     str << "<ymap>" << endl;
     for(size_t x=0;x<offset_map.size();x++) {
       for(size_t y=0;y<offset_map[x].size();y++) {
@@ -717,6 +718,7 @@ public:
 
   // Fix protection, many of these can be made protected (this should be friend of itself)
 
+  // where each pixel of the image is stored in linear indices  -Arthur
   vector<_prec> image;
   unsigned int m_image_width;
   unsigned int m_image_height;
