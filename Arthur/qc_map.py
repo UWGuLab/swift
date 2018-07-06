@@ -15,7 +15,7 @@ with open(sys.argv[3]) as f:
             x = int(titles[2])
             y = int(titles[3])
             image[y, x] = [255, 0, 0]
-img = Image.fromarray(image)
+# img = Image.fromarray(image)
 # open fastq.nonpf
 with open(sys.argv[2]) as f:
     lines = f.readlines()

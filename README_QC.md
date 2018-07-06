@@ -35,3 +35,6 @@ Here is an example(if you are in swift folder already):
 Note that '~/data/PhiX...' is the location of the data
           1 is the fov
           test-run is the name of this run (could be any string you want)
+
+# Results
+All results will be stored in ~/swift_results/[name of the run]/
