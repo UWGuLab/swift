@@ -1,0 +1,410 @@
+Index:   (251,590) 
+Sequence: CCCCCCCCCCCCTACCCCCACC
+Sum:      458
+Stdev     4.33418
+
+Index:   (218,207) 
+Sequence: CCCCCCCCCCCCGACCCACCCC
+Sum:      435
+Stdev     5.02658
+
+Index:   (266,513) 
+Sequence: CCCCCCCCCCCAGACACACCGC
+Sum:      383
+Stdev     4.36577
+
+Index:   (818,646) 
+Sequence: CCCCCCCCCCCCCACACCCAGC
+Sum:      416
+Stdev     5.59959
+
+Index:   (754,731) 
+Sequence: CCCCCCCCCCCCCACCCCCACA
+Sum:      396
+Stdev     5.32575
+
+Index:   (912,763) 
+Sequence: CCCCCCCCCCCCCACCGACAGC
+Sum:      400
+Stdev     5.3567
+
+Index:   (502,996) 
+Sequence: CCCCCCCCCCCCCACCCACAGC
+Sum:      403
+Stdev     6.0256
+
+Index:   (489,164) 
+Sequence: CCCCCCCCCCCCTACCCACATC
+Sum:      388
+Stdev     5.98138
+
+Index:   (297,379) 
+Sequence: CCCCCCCCCCCCTCCACCCACC
+Sum:      407
+Stdev     4.84064
+
+Index:   (224,808) 
+Sequence: CCCCCCCCCCCCCACCCCCCCC
+Sum:      372
+Stdev     4.97182
+
+Index:   (605,605) 
+Sequence: CCCCCCCCCCCCGACACACCGC
+Sum:      425
+Stdev     5.51351
+
+Index:   (123,628) 
+Sequence: CCCCCCCCCCCCCACACACACA
+Sum:      458
+Stdev     6.23506
+
+Index:   (338,474) 
+Sequence: CCCCCCCCCCCCTACCCACCTC
+Sum:      412
+Stdev     5.41195
+
+Index:   (387,537) 
+Sequence: CCCCCCCCCCCCTACACCCCTC
+Sum:      386
+Stdev     3.47363
+
+Index:   (794,563) 
+Sequence: CCCCCCCCCCCCGCCACACACC
+Sum:      379
+Stdev     5.62407
+
+Index:   (243,598) 
+Sequence: CCCCCCCCCCCCCACACACACA
+Sum:      412
+Stdev     5.9938
+
+Index:   (618,12) 
+Sequence: CCCCCCCCCCCCTACACACCGC
+Sum:      382
+Stdev     4.54818
+
+Index:   (774,53) 
+Sequence: CCCCCCCCCCCCCACACACATC
+Sum:      399
+Stdev     5.15483
+
+Index:   (580,320) 
+Sequence: CCCCCCCCCGCACACCCACATC
+Sum:      414
+Stdev     6.16173
+
+Index:   (443,322) 
+Sequence: CCCCCCCCCCCCTACCCCCCCC
+Sum:      393
+Stdev     4.80809
+
+Index:   (385,437) 
+Sequence: CCCCCCCCCCCACCCACCTCTC
+Sum:      386
+Stdev     4.23972
+
+Index:   (452,582) 
+Sequence: CCCCCCCCCCCCCCTACCCACA
+Sum:      386
+Stdev     5.1055
+
+Index:   (225,667) 
+Sequence: CCCCCCCCCCCCCACACACCTC
+Sum:      404
+Stdev     5.58851
+
+Index:   (792,720) 
+Sequence: CCCCCCCCCCCCCAGACCCCGC
+Sum:      389
+Stdev     5.61966
+
+Index:   (461,427) 
+Sequence: CCCCCCCCCCCCCACCGCCCGC
+Sum:      382
+Stdev     4.9133
+
+Index:   (398,520) 
+Sequence: CCCCCCCCCCCCCACCTACCCC
+Sum:      393
+Stdev     4.59541
+
+Index:   (894,967) 
+Sequence: CCCCCCCCCCCCGCCACCCACC
+Sum:      389
+Stdev     5.4388
+
+Index:   (62,112) 
+Sequence: CCCCCCCCCCCCGACACCCATC
+Sum:      372
+Stdev     3.04376
+
+Index:   (107,133) 
+Sequence: CCCCCCCCCCCCCACCTCCCTC
+Sum:      375
+Stdev     4.89413
+
+Index:   (308,470) 
+Sequence: CCCCCCCCCCCCGCCCCACACC
+Sum:      396
+Stdev     4.30644
+
+Index:   (395,511) 
+Sequence: CCCCCCCCCCCCGACCCACATC
+Sum:      425
+Stdev     5.19078
+
+Index:   (537,803) 
+Sequence: CCCCCCCCCCCCGACACCCACC
+Sum:      450
+Stdev     5.12327
+
+Index:   (654,831) 
+Sequence: CCCCCCCCCCCCTACCCACCCA
+Sum:      426
+Stdev     4.59788
+
+Index:   (502,957) 
+Sequence: CCCCCCCCCCCCGACACCCCGC
+Sum:      411
+Stdev     4.64549
+
+Index:   (136,106) 
+Sequence: CCCCCCCCCCCCCACATCCCGC
+Sum:      371
+Stdev     4.80809
+
+Index:   (353,255) 
+Sequence: CCCCCCCCCCCCGACCCCCCCA
+Sum:      409
+Stdev     4.1083
+
+Index:   (534,301) 
+Sequence: CCCCCCCCCCCCCACAGCCCCC
+Sum:      436
+Stdev     4.33418
+
+Index:   (516,325) 
+Sequence: CCCCCCCCCCCCCACCCACCTC
+Sum:      414
+Stdev     5.04197
+
+Index:   (199,435) 
+Sequence: CCCCCCCCCCCCGACCCCCAGC
+Sum:      405
+Stdev     5.67017
+
+Index:   (35,557) 
+Sequence: CCCCCCCCCCCCCACACCCACC
+Sum:      403
+Stdev     5.45549
+
+Index:   (225,680) 
+Sequence: CCCCCCCCCCCCCCTCCACATC
+Sum:      437
+Stdev     3.87645
+
+Index:   (416,806) 
+Sequence: CCCCCCCCCCCCTACCCACCGC
+Sum:      410
+Stdev     5.59663
+
+Index:   (640,889) 
+Sequence: CCCCCCCCCCCCTCCACCCCGC
+Sum:      410
+Stdev     4.42663
+
+Index:   (308,28) 
+Sequence: CCCCCCCCCCCCGACACACACA
+Sum:      372
+Stdev     6.19317
+
+Index:   (124,233) 
+Sequence: CCCCCCCCCCCCCACCCACACC
+Sum:      402
+Stdev     4.23387
+
+Index:   (882,503) 
+Sequence: CCCCCCCCCCCCCACACACACC
+Sum:      422
+Stdev     5.73376
+
+Index:   (455,837) 
+Sequence: CCCCCCCCCCCCCACATACCGC
+Sum:      429
+Stdev     5.77416
+
+Index:   (187,843) 
+Sequence: CCCCCCCCCCCCGACACACATC
+Sum:      459
+Stdev     5.24227
+
+Index:   (640,843) 
+Sequence: CCCCCCCCCCCCTCCACACCTC
+Sum:      397
+Stdev     3.67395
+
+Index:   (741,849) 
+Sequence: CCCCCCCCCCCCGACACCCCGC
+Sum:      394
+Stdev     4.94432
+
+Index:   (719,950) 
+Sequence: CCCCCCCCCCCCGCCACCCACC
+Sum:      383
+Stdev     3.62641
+
+Index:   (996,1007) 
+Sequence: CCCCCCCCCCCCGACACCCACC
+Sum:      380
+Stdev     5.145
+
+Index:   (241,61) 
+Sequence: CCCCCCCCCCCCCACCCACCCC
+Sum:      403
+Stdev     5.69199
+
+Index:   (277,131) 
+Sequence: CCCCCCCCCCCCCACCCACACC
+Sum:      415
+Stdev     6.07001
+
+Index:   (773,165) 
+Sequence: CCCCCCCCCCCCGACACACATC
+Sum:      449
+Stdev     4.73535
+
+Index:   (380,205) 
+Sequence: CCCCCCCCCCCCGACCCACACA
+Sum:      401
+Stdev     5.19556
+
+Index:   (171,262) 
+Sequence: CCCCCCCCCCCCCACACACATC
+Sum:      434
+Stdev     6.00138
+
+Index:   (410,292) 
+Sequence: CCCCCCCCCCCCCACAGCCACA
+Sum:      419
+Stdev     6.04887
+
+Index:   (220,350) 
+Sequence: CCCCCCCCCCCCTACACACCTA
+Sum:      405
+Stdev     5.42435
+
+Index:   (828,375) 
+Sequence: CCCCCCCCCCCAGACCCACATC
+Sum:      379
+Stdev     5.58351
+
+Index:   (469,425) 
+Sequence: CCCCCCCCCCCCGACCCCCCGC
+Sum:      424
+Stdev     4.65327
+
+Index:   (541,427) 
+Sequence: CCCCCCCCCCCCGACACACACA
+Sum:      409
+Stdev     5.3143
+
+Index:   (312,456) 
+Sequence: CCCCCCCCCCCATACCCCCACA
+Sum:      407
+Stdev     5.33215
+
+Index:   (173,485) 
+Sequence: CCCCCCCCCCCCCACCCACCGC
+Sum:      416
+Stdev     6.00688
+
+Index:   (464,536) 
+Sequence: CCCCCCCCCCCCGCCACACACC
+Sum:      461
+Stdev     4.68535
+
+Index:   (106,544) 
+Sequence: CCCCCCCCCCCCTCCACACACC
+Sum:      416
+Stdev     3.82467
+
+Index:   (533,617) 
+Sequence: CCCCCCCCCCCCGACACACCGC
+Sum:      414
+Stdev     5.686
+
+Index:   (70,641) 
+Sequence: CCCCCCCCCCCCTACACCCCTC
+Sum:      404
+Stdev     4.25917
+
+Index:   (411,659) 
+Sequence: CCCCCCCCCCCCGACCCCCCCC
+Sum:      398
+Stdev     3.66692
+
+Index:   (331,702) 
+Sequence: CCCCCCCCCCCCGACACCCAGC
+Sum:      429
+Stdev     5.28935
+
+Index:   (422,709) 
+Sequence: CCCCCCCCCCCCCACCCCGACC
+Sum:      410
+Stdev     3.58717
+
+Index:   (394,713) 
+Sequence: CCCCCCCCCCCCCATCCCCACC
+Sum:      416
+Stdev     4.1441
+
+Index:   (182,756) 
+Sequence: CCCCCCCCCCCCTACCCACACC
+Sum:      436
+Stdev     5.09578
+
+Index:   (353,782) 
+Sequence: CCCCCCCCCCCCCAGCCACAGC
+Sum:      407
+Stdev     4.90593
+
+Index:   (909,822) 
+Sequence: CCCCCCCCCCCCGACACCCACC
+Sum:      392
+Stdev     4.88631
+
+Index:   (414,823) 
+Sequence: CCCCCCCCCCCCCCCCCACCGC
+Sum:      374
+Stdev     4.3589
+
+Index:   (493,844) 
+Sequence: CCCCCCCCCCCCTACACACAGC
+Sum:      394
+Stdev     5.79113
+
+Index:   (467,915) 
+Sequence: CCCCCCCCCCCCTACCCACCCC
+Sum:      404
+Stdev     3.86764
+
+Index:   (811,945) 
+Sequence: CCCCCCCCCCCAGACACACATC
+Sum:      444
+Stdev     4.96933
+
+Index:   (382,963) 
+Sequence: CCCCCCCCCCCCTACACACACC
+Sum:      441
+Stdev     5.07648
+
+Index:   (168,986) 
+Sequence: CCCCCCCCCCCCTCCACACATC
+Sum:      447
+Stdev     4.88398
+
+Index:   (465,1004) 
+Sequence: CCCCCCCCCCCCTACACACCCC
+Sum:      416
+Stdev     5.51781
+

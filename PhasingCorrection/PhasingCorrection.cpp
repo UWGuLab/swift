@@ -34,7 +34,7 @@
 #include "Timetagger.h"
 
 
-//! This method generates Phasing estimates for a given cycle 
+//! This method generates Phasing estimates for a given cycle
 //
 ///! Phasing estimates are based on the amount of the called (maximum intensity) base that is incorporated
 ///! in to non-called (non-maximal) bases in the next (forward phasing) and previous (reverse phasing) cycles.
@@ -45,7 +45,7 @@ template<class _prec>
 bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &clusters,int cycle,string signalid) {
 
   err << m_tt.str() << "Getting Phasing Estimates" << endl;
-  
+
   // Setup filters, currently only filtering on Purity and clusters that fell off the edge of the tile,
   // but it may be worth experimenting with the other filters at some point.
   ClusterFilter_OffEdge<_prec>            filter_offedge(signalid);
@@ -59,7 +59,7 @@ bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &cluste
 
   int discarded=0;
   int used_bases=0;
-  
+
   vector<vector<_prec> > all_forward_phasing(ReadIntensity<_prec>::base_count,vector<_prec>());
   vector<vector<_prec> > all_reverse_phasing(ReadIntensity<_prec>::base_count,vector<_prec>());
   for(typename ReadIntensity<_prec>::base_type b=0;b < ReadIntensity<_prec>::base_count;b++) {
@@ -71,12 +71,12 @@ bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &cluste
 
   // Process all clusters, get forward/reverse phasing per cluster/base add all phasing values to a vector
   for(typename vector<Cluster<_prec> >::const_iterator i = clusters.begin();i != clusters.end();i++) {
-    
+
     // TODO: The logic below has been abandoned in the quest for speed. Only the purity and offedge
     // filters were in use at the time of the change. Those two filters (at least) now have an 'is_valid'
     // method which just returns a boolean, rather than making a copy of the cluster and setting its
     // valid flag, as is done by the 'process' method.
-    
+
     // Apply filters (these mostly change the valid flag of the cluster)
     // Cluster<_prec> filtered_cluster;
     // filtered_cluster = filter_purity      .process(*i);
@@ -88,19 +88,21 @@ bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &cluste
     // filtered_cluster = filter_erode_gt    .process(filtered_cluster);
     // filtered_cluster = filter_erode_ac    .process(filtered_cluster);
 
+    // filter_purity doesn't do anything because it didn't process
+    // filter_offedge called is_any_off_edge, so it might do some checking   --Arthur 6/29/2018
     if (filter_offedge.is_valid(*i) && filter_purity.is_valid(*i)) {
-      
+
       ReadIntensity<_prec> last_base;
       ReadIntensity<_prec> this_base;
       ReadIntensity<_prec> next_base;
 
-      // Find next and last bases, if they exist. 
-      
+      // Find next and last bases, if they exist.
+
       bool last_base_bad = false;
       bool next_base_bad = false;
 
       if(cycle-1 >= 0) {
-        last_base = i->const_signal(signalid)[cycle-1]; 
+        last_base = i->const_signal(signalid)[cycle-1];
       } else {
         last_base_bad=true;
       }
@@ -167,23 +169,23 @@ bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &cluste
   err << m_tt.str() << "Processed Cycle: " << right << setw(2) << cycle+1 << endl;
   err << m_tt.str() << "Used Bases: " << right << setw(5) << used_bases << endl;
   err << m_tt.str() << "Discarded : " << right << setw(5) << discarded << endl;
-  
+
   for(int n=0;n<ReadIntensity<_prec>::base_count;n++) {
     err << m_tt.str() << "Base count, first base:  " << ReadIntensity<_prec>::base_name[n] << " :"
       << right << setw(5) << forward_phasing_base_count[cycle][n] << endl;
   }
-  
+
   for(int n=0;n<ReadIntensity<_prec>::base_count;n++) {
     err << m_tt.str() << "Base count, second base: " << ReadIntensity<_prec>::base_name[n] << " :"
       << right << setw(5) << reverse_phasing_base_count[cycle][n] << endl;
   }
-  
+
   for(int n=0;n<ReadIntensity<_prec>::base_count;n++) {
-    
+
     err << m_tt.str() << "Forward Phasing " << ReadIntensity<_prec>::base_name[n] << " :" << forward_phasing[cycle][n] << endl;///forward_phasing_base_count[cycle][n] << endl;
    // forward_phasing[cycle][n] = forward_phasing[cycle][n]/forward_phasing_base_count[cycle][n];
   }
-  
+
   for(int n=0;n<ReadIntensity<_prec>::base_count;n++) {
     err << m_tt.str() << "Reverse Phasing " << ReadIntensity<_prec>::base_name[n] << " :" << reverse_phasing[cycle][n] << endl;///reverse_phasing_base_count[cycle][n] << endl;
    //  reverse_phasing[cycle][n] = reverse_phasing[cycle][n]/reverse_phasing_base_count[cycle][n];
@@ -194,9 +196,9 @@ bool PhasingCorrection<_prec>::get_phasing(const vector<Cluster<_prec> > &cluste
     if(forward_phasing[cycle][base] != 0) all_phasing_zero = false;
     if(reverse_phasing[cycle][base] != 0) all_phasing_zero = false;
   }
-  
+
   err << m_tt.str() << "Phasing Estimation complete" << endl;
-  
+
   return true;
 }
 
@@ -208,13 +210,13 @@ bool PhasingCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &cluster
                                                 string local_source_signal,        ///< Source signal id
                                                 string local_target_signal         ///< Target signal id, can be the same as source
                                                ) {
-  
+
   err << m_tt.str() << "Applying correction" << endl;
   for(typename vector<Cluster<_prec> >::iterator i = clusters.begin();i != clusters.end();i++) {
-    
+
     typename Cluster<_prec>::signal_vec_type old_signal;
     old_signal = (*i).const_signal(local_source_signal);
-    
+
     typename Cluster<_prec>::signal_vec_type new_signal;
 
     thresholdmet=false;
@@ -230,9 +232,9 @@ bool PhasingCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &cluster
 
     //TODO: Inefficient
     (*i).noise(local_target_signal) = (*i).noise(local_source_signal);
-  
+
   }
-  
+
   err << m_tt.str() << "Correction applied" << endl;
 
   if(thresholdmet) return false;
@@ -246,7 +248,7 @@ typename Cluster<_prec>::signal_vec_type PhasingCorrection<_prec>::apply_correct
                                                                                     bool &thresholdmet
                                                                                    ) {
   typename Cluster<_prec>::signal_vec_type new_signal = old_signal;
-  
+
   // 1. Add forward phasing
   for(int b=0;b<ReadIntensity<_prec>::base_count;b++) {
     _prec use_phasing=0;
@@ -259,7 +261,7 @@ typename Cluster<_prec>::signal_vec_type PhasingCorrection<_prec>::apply_correct
       new_signal[cycle].set_base(b,new_signal[cycle].get_base(b) + addthis);
     }
   }
-  
+
   // 2. Add reverse phasing
   for(int b=0;b<ReadIntensity<_prec>::base_count;b++) {
     _prec use_phasing=0;
@@ -272,7 +274,7 @@ typename Cluster<_prec>::signal_vec_type PhasingCorrection<_prec>::apply_correct
       new_signal[cycle].set_base(b,new_signal[cycle].get_base(b) + addthis);
     }
   }
-  
+
   // 3. Subtract forward phasing
   for(int b=0;b<ReadIntensity<_prec>::base_count;b++) {
     _prec use_phasing=0;
@@ -285,7 +287,7 @@ typename Cluster<_prec>::signal_vec_type PhasingCorrection<_prec>::apply_correct
       new_signal[na].set_base(b,new_signal[na].get_base(b) - subtractthis);
     }
   }
-  
+
   // 4. Subtract reverse phasing
   for(int b=0;b<ReadIntensity<_prec>::base_count;b++) {
     _prec use_phasing=0;
@@ -298,6 +300,6 @@ typename Cluster<_prec>::signal_vec_type PhasingCorrection<_prec>::apply_correct
       new_signal[na].set_base(b,new_signal[na].get_base(b) - subtractthis);
     }
   }
-  
+
   return new_signal;
 }

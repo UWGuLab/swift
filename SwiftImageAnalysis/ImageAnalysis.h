@@ -135,6 +135,8 @@ public:
 
   int     params_load_cycle;                   ///< Process this many cycles at a time
 
+  bool    params_print_intermediate;                  ///< print intermediater images   --Arthur 6/27/2018
+
   ChannelOffsets<uint16>::correlation_type params_correlation_method;          ///< Image offset calculation method (not used)
   ChannelOffsets<_threshold_prec> *channel_offsets_thresholded;
   ChannelOffsets<uint16> *channel_offsets_standard;

@@ -10,6 +10,7 @@
 #include <string>
 #include <cstdlib>
 #include <vector>
+#include <numeric>
 #include <cstdint>
 #include <opencv2/opencv.hpp>
 #include <boost/algorithm/string.hpp>
@@ -53,7 +54,7 @@ int main(int argc, char** argv) {
   std::string projectname = getProjectName(std::string(argv[1]));
   // Heatmap, fixed image size, might subject to changes
   // most screens can only support 8 bit depth
-  Mat image(2048, 1794, CV_8UC1);
+  Mat image(1024, 1024, CV_8UC1);
   // Heatmap reference
   std::ofstream ref;
   ref.open("Heatmap_reference_" + projectname + ".txt");

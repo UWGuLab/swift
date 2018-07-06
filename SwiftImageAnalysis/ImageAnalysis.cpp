@@ -77,6 +77,9 @@ inline void ImageAnalysis<_prec,_threshold_prec>::initialise() {
   params_calculate_noise              = parms->get_parm_as<bool>("calculate_noise");
   params_load_cycle                   = parms->get_parm_as<int>("load_cycle");
 
+  // print intermediate images  -Arthur 6/27/2018
+  params_print_intermediate           = parms->get_parm_as<bool>("print_intermediate");
+
   channel_offsets_standard = NULL;
   channel_offsets_thresholded = NULL;
 }
@@ -235,6 +238,19 @@ vector<SwiftImageCluster<_prec> > ImageAnalysis<_prec,_threshold_prec>::segmenta
     exit(1);
   }
 
+  // to print intermediate results   --Arthur 6/29/2018
+  if (params_print_intermediate) {
+    SwiftImage<int> image(images[0][0].image_width(),images[0][0].image_height(),0);
+    for (auto cluster : image_clusters) {
+      SwiftImagePosition<int> position = cluster.get_position();
+      if (position.x >= 0 && position.x < image.image_width()
+          && position.y >= 0 && position.y < image.image_height()) {
+        image(position.x, position.y) = images[0][0](position.x, position.y);
+      }
+    }
+    image.save("post-segmentation-image.tif");
+  }
+
   return image_clusters;
 }
 
@@ -246,6 +262,11 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
   vector<vector<SwiftImage<_threshold_prec> > > images_thresholded;
 
   if(params_background_subtraction_enabled == false) unified_threshold = false;
+
+  // print out image before background subtraction  --Arthur 6/27/2018
+  if (params_print_intermediate) {
+    images[0][0].save("pre-background_subtraction.tif");
+  }
 
   if(params_background_subtraction_window == params_correlation_threshold_window) {
     unified_threshold = true;
@@ -286,6 +307,11 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
     }
   }
 
+  // print out image after background subtraction  --Arthur 6/27/2018
+  if (params_print_intermediate) {
+    images[0][0].save("post-background_subtraction.tif");
+  }
+
   // Calculate offsets
   if((channel_offsets_thresholded == NULL) && (channel_offsets_standard == NULL)) {
     if(unified_threshold) {
@@ -308,7 +334,7 @@ void ImageAnalysis<_prec,_threshold_prec>::correlate_and_background_subtract() {
       channel_offsets_standard = new ChannelOffsets<uint16>(params_correlation_method,
                                                    params_correlation_subimages,
                                                    params_correlation_subsubimages,
-                                                   1,
+                                                   params_correlation_cc_subimage_multiplier,
                                                    params_correlation_reference_cycle,
                                                    params_correlation_aggregate_cycle,
                                                    params_correlation_threshold_window,
@@ -415,16 +441,21 @@ void ImageAnalysis<_prec,_threshold_prec>::extend_clusters(vector<Cluster<_prec>
 template<class _prec,class _threshold_prec>
 void ImageAnalysis<_prec,_threshold_prec>::generate(vector<Cluster<_prec> > &clusters) {
 
+  // load the first 10(params_load_cycle) images   --Arthur 6/29/2018
   load_images(params_load_cycle,true);
 
   vector<SwiftImageCluster<_prec> > image_clusters;
 
+  // only perform segmentation(find cluster) on the first 10 cycles  --Arthur 6/29/2018
   generate_initial(clusters,image_clusters);
 
+  // for all the other cycles                            --Arthur 6/29/2018
   for(;images[0].size() != 0;) {
     load_images(params_load_cycle);
 
     if(images[0].size() != 0) {
+      // just dump intensities of later cycles into already-found clusters
+      // (after background subtraction and correlation)   --Arthur 6/29/2018
       generate_additional(clusters,image_clusters);
     }
   }

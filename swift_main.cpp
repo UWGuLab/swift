@@ -193,6 +193,7 @@ int main (int argc, char **argv) {
     any_offedge.process(clusters);
   }
 
+  // I don't think this is doing anything   --Arthur 6/29/2017
   remove_invalid_clusters(clusters);
 
   cout << m_tt.str() << " Clusters after removal: " << clusters.size() << endl;
@@ -495,59 +496,60 @@ void write_sequence_files(CommandLine *parms,
   }
 
   // produces coordiante_maps --Arthur 6/20/2018
-  if (parms->is_set("coordinate_maps")) {
-    ofstream pfCoorMap, nonpfCoorMap;
-    // using fastq prefix
-    pfCoorMap.open("coordinate_maps_" + exp_name + ".pf");
-    nonpfCoorMap.open("coordinate_maps_" + exp_name + ".nonpf");
-    for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
-      // stringstream hijack data from saving intensity data
-      // Recall that intensity data is in this form:
-      // 1 1 |x| |y| |intensity channel1 cyc1| |intensity channel2 cyc1| …
-      stringstream intensity_data ((*i).dump_gapipelinestr("FINAL"));
-      // prepare data
-      int tmp, x, y;
-      double intensity;
-      string sequence;
-      vector<int> scores;
-      intensity_data >> tmp;
-      intensity_data >> tmp;
-      intensity_data >> x;
-      intensity_data >> y;
-      intensity_data >> intensity;
-      sequence = (*i).sequence("FINAL",tiletag).get_sequence_string();
-      scores = (*i).sequence("FINAL",tiletag).phred_quality();
-
-      if((*i).is_valid()) {
-        // "x y"
-        pfCoorMap << x << " " << y << " ";
-        // Sequence
-        pfCoorMap << sequence << " ";
-        // Quality Scores
-        for (auto it = scores.begin(); it != scores.end(); it++) {
-          if ((it+1) != scores.end())
-            pfCoorMap << *it << ",";
-          else
-            pfCoorMap << *it << " ";
-        }
-        // Intensity at the first cycle
-        pfCoorMap << intensity << endl;
-      } else {
-        // same as above but to nonpfCoorMap
-        nonpfCoorMap << x << " " << y << " ";
-        nonpfCoorMap << sequence << " ";
-        for (auto it = scores.begin(); it != scores.end(); it++) {
-          if ((it+1) != scores.end())
-            nonpfCoorMap << *it << ",";
-          else
-            nonpfCoorMap << *it << " ";
-        }
-        nonpfCoorMap << intensity << endl;
-      }
-    }
-    pfCoorMap.close();
-    nonpfCoorMap.close();
-  }
+  // commented out because it somehow keeps showing up and we don't need it for now
+  // if (parms->is_set("coordinate_maps")) {
+  //   ofstream pfCoorMap, nonpfCoorMap;
+  //   // using fastq prefix
+  //   pfCoorMap.open("coordinate_maps_" + exp_name + ".pf");
+  //   nonpfCoorMap.open("coordinate_maps_" + exp_name + ".nonpf");
+  //   for(vector<Cluster<_precision> >::iterator i=clusters.begin();i != clusters.end();i++) {
+  //     // stringstream hijack data from saving intensity data
+  //     // Recall that intensity data is in this form:
+  //     // 1 1 |x| |y| |intensity channel1 cyc1| |intensity channel2 cyc1| …
+  //     stringstream intensity_data ((*i).dump_gapipelinestr("FINAL"));
+  //     // prepare data
+  //     int tmp, x, y;
+  //     double intensity;
+  //     string sequence;
+  //     vector<int> scores;
+  //     intensity_data >> tmp;
+  //     intensity_data >> tmp;
+  //     intensity_data >> x;
+  //     intensity_data >> y;
+  //     intensity_data >> intensity;
+  //     sequence = (*i).sequence("FINAL",tiletag).get_sequence_string();
+  //     scores = (*i).sequence("FINAL",tiletag).phred_quality();
+  //
+  //     if((*i).is_valid()) {
+  //       // "x y"
+  //       pfCoorMap << x << " " << y << " ";
+  //       // Sequence
+  //       pfCoorMap << sequence << " ";
+  //       // Quality Scores
+  //       for (auto it = scores.begin(); it != scores.end(); it++) {
+  //         if ((it+1) != scores.end())
+  //           pfCoorMap << *it << ",";
+  //         else
+  //           pfCoorMap << *it << " ";
+  //       }
+  //       // Intensity at the first cycle
+  //       pfCoorMap << intensity << endl;
+  //     } else {
+  //       // same as above but to nonpfCoorMap
+  //       nonpfCoorMap << x << " " << y << " ";
+  //       nonpfCoorMap << sequence << " ";
+  //       for (auto it = scores.begin(); it != scores.end(); it++) {
+  //         if ((it+1) != scores.end())
+  //           nonpfCoorMap << *it << ",";
+  //         else
+  //           nonpfCoorMap << *it << " ";
+  //       }
+  //       nonpfCoorMap << intensity << endl;
+  //     }
+  //   }
+  //   pfCoorMap.close();
+  //   nonpfCoorMap.close();
+  // }
 
   // Write FASTQs
   if(parms->is_set("fastq")) {
@@ -770,8 +772,10 @@ bool process_parameters (int argc, char **argv) {
 
   // To Produce Coordinate Maps  --Arthur 6/19/2018
   parms->add_valid_parm("coordinate_maps"                      ,"Produce Coordinate Maps, i.e. 4 images each representing presence of A, T, C, G at that cycle", false, "false");
-  // To produce quick reports
-  parms->add_valid_parm("quick_reports"                        ,"Produce quick reports and Heatmap in a folder called reports");
+  // To produce quick reports    --Arthur 6/20/2018
+  parms->add_valid_parm("quick_reports"                        ,"Produce quick reports and Heatmap in a folder called reports", false, "true");
+  // print out intermediate images  --Arthur 6/27/2018
+  parms->add_valid_parm("print_intermediate"                   ,"Print out intermediate images after each step", false, "false");
 
   if(argc < 2) {
     cout << parms->usage() << endl;

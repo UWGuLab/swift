@@ -39,7 +39,7 @@ _prec CrossTalkCorrection<_prec>::get_percentile(vector<double> c,int percentile
 
   return c[static_cast<int>((static_cast<double>(percentile_limit)/100)*static_cast<double>(c.size()))];
 }
-                                                
+
 
 template<class _prec>
 void CrossTalkCorrection<_prec>::make_bins(vector<double> &x,             /// X values
@@ -52,7 +52,10 @@ void CrossTalkCorrection<_prec>::make_bins(vector<double> &x,             /// X 
 
   // 1.1.3.1 Find position in count vector where we go over lower percentile limit
   // 1.1.3.2 Find position in count vector where we go over upper percentile limit
-  
+
+
+  // Both lower limit and upper limit are input Parameters
+  // for default, lower=15% and upper=85%                    -- Arthur 6/29/2018
   _prec percentile_lower_limit_position = get_percentile(x,crosstalk_lowerpercentile); // 65
   _prec percentile_upper_limit_position = get_percentile(x,crosstalk_upperpercentile); // 95
 
@@ -65,11 +68,11 @@ void CrossTalkCorrection<_prec>::make_bins(vector<double> &x,             /// X 
   vector<double> bins_x;
 
   // I'm iteratively trying bin sizes, until I find one that has ten or fewer points per bin. TODO: this is inefficient, fix it.
-  
+
   _prec bin_size_required=crosstalk_bin_size_required;
   _prec bin_threshold = crosstalk_bin_threshold;
-cout << "bin_size_required: " << bin_size_required << endl;
-cout << "bin_threshold    : " << bin_threshold << endl;
+  cout << "bin_size_required: " << bin_size_required << endl;
+  cout << "bin_threshold    : " << bin_threshold << endl;
   _prec average_in_bins=bin_size_required+bin_threshold+1;
   bool  last_is_more  = false;
   int current_num_bins = 100;
@@ -78,10 +81,14 @@ cout << "bin_threshold    : " << bin_threshold << endl;
   int itterations=0;
   for(;(abs(average_in_bins-bin_size_required) > bin_threshold) && (itterations < itteration_limit);itterations++) {
     // 2.1 We are taking bins across the x-axis and finding the smallest y-value in those bins
+    // bins_first[i] == true means ith bin doesn't have its first point yet
     vector<bool>  bins_first(current_num_bins,true);
+    // num_in_bins[x]: number of points in bin x  --Arthur 6/29/2018
     vector<int>  num_in_bins(current_num_bins,0);
 
+    // bins[i] means: the smallest y value in bin i
     bins.clear();
+    // bins_x[i] means: the x index of smallest y value in bin i
     bins_x.clear();
     for(int n=0;n<=current_num_bins;n++) bins  .push_back(0);
     for(int n=0;n<=current_num_bins;n++) bins_x.push_back(0);
@@ -90,6 +97,8 @@ cout << "bin_threshold    : " << bin_threshold << endl;
 
     for(unsigned int n = 0;n < x.size();n++) {
       // this is very inefficient...
+      // current_bin_num=0 means the first bin         --Arthur 6/29/2018
+      // current_num_bins is the total number of bins  --Arthur 6/29/2018
       for(int current_bin_number=0;current_bin_number<current_num_bins;current_bin_number++) {
         if((current_bin_number<50) || (current_bin_number>(current_num_bins-50))) {
           _prec current_bin_start = percentile_lower_limit_position+(binsize*current_bin_number);
@@ -118,13 +127,14 @@ cout << "bin_threshold    : " << bin_threshold << endl;
         bins_x_real.push_back(bins_x[n]);
         real_bins++;
       } else {
-        err << "Removing empty or zero bin: " << n << endl;
+        // blocking this because it occupies too much command line space  --Arthur 6/29/2018
+        // err << "Removing empty or zero bin: " << n << endl;
       }
     }
     bins   = bins_real;
     bins_x = bins_x_real;
 
- 
+
     int total=0;
     bool first=true;
     for(vector<int>::iterator i=num_in_bins.begin();i != num_in_bins.end();i++) {
@@ -157,7 +167,7 @@ cout << "bin_threshold    : " << bin_threshold << endl;
   xo = bins_x;
   yo = bins;
   // plotxy(yo,xo,"Crosstalk");
-}                                           
+}
 
 template<class _prec>
 bool CrossTalkCorrection<_prec>::regression_arm(vector<double> &x,             /// X values
@@ -212,12 +222,12 @@ bool CrossTalkCorrection<_prec>::initialise(const vector<Cluster<_prec> > &clust
   T_values.clear();
 
   ClusterFilter_FirstOffEdge<_prec>         filter_offedge(signalid);
-  
+
 
   ClusterFilter_AnyZero<_prec>         filter_any_zero(signalid,0);
 
   int discarded=0;
-  
+
   vector<Cluster<_prec> > filtered_clusters;
   vector<Cluster<_prec> > filtered_clusters2;
   int n=0;
@@ -227,7 +237,7 @@ bool CrossTalkCorrection<_prec>::initialise(const vector<Cluster<_prec> > &clust
   }*/
 
   filtered_clusters = clusters;
-  
+
   int clusters_per_bin = crosstalk_erode_clusters_per_bin;
   err << "Clusters: " << clusters.size() << endl;
   err << "Clusters per bin: " << clusters_per_bin << endl;
@@ -251,21 +261,21 @@ bool CrossTalkCorrection<_prec>::initialise(const vector<Cluster<_prec> > &clust
 
     if(filtered_cluster.valid) {
       filtered_clusters2.push_back(filtered_cluster);
-      
+
       A_values.push_back(filtered_cluster.signal(signalid)[c_cycle].get_base(ReadIntensity<_prec>::base_a));
       C_values.push_back(filtered_cluster.signal(signalid)[c_cycle].get_base(ReadIntensity<_prec>::base_c));
-        
+
       G_values.push_back(filtered_cluster.signal(signalid)[c_cycle].get_base(ReadIntensity<_prec>::base_g));
       T_values.push_back(filtered_cluster.signal(signalid)[c_cycle].get_base(ReadIntensity<_prec>::base_t));
     } else discarded++;
     n++;
   }
-  
+
   err << "Crosstalk, clustered not used in regression: " << discarded << endl;
   err << "Plotting uncorrected filtered values" << endl;
  // crosstalk_plot(filtered_clusters2,signalid,0,ReadIntensity<>::base_a,ReadIntensity<>::base_c,"Uncorrected filtered for regression");
  // crosstalk_plot(filtered_clusters2,signalid,0,ReadIntensity<>::base_t,ReadIntensity<>::base_g,"Uncorrected fitlered for regression");
-  
+
   // Wait so the user can get a look at the crosstalk plots
   /* cout << m_tt.str() << endl << "Press ENTER to continue..." << endl;
 
@@ -275,7 +285,7 @@ bool CrossTalkCorrection<_prec>::initialise(const vector<Cluster<_prec> > &clust
 */
   return true;
 }
-  
+
 /// Applies the current matrix to these clusters
 template<class _prec>
 bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clusters, ///< Clusters to process
@@ -284,10 +294,10 @@ bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clust
                                                  ) {
 
   for(typename vector<Cluster<_prec> >::iterator i = clusters.begin();i != clusters.end();i++) {
-    
+
     typename Cluster<_prec>::signal_vec_type old_signal;
     old_signal = (*i).const_signal(local_source_signal);
-    
+
     typename Cluster<_prec>::signal_vec_type new_signal;
 
     for(typename Cluster<_prec>::signal_vec_type::const_iterator j=old_signal.begin();j != old_signal.end();j++) {
@@ -298,7 +308,7 @@ bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clust
     (*i).add_signal(local_target_signal);
     (*i).signal(local_target_signal).clear();
     (*i).signal(local_target_signal) = new_signal;
-   
+
     //TODO: inefficient
     (*i).noise(local_target_signal)  = (*i).const_noise(local_source_signal);
   }
@@ -315,7 +325,7 @@ bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clust
                                                  ) {
 
   for(typename vector<Cluster<_prec> >::iterator i = clusters.begin();i != clusters.end();i++) {
-    
+
     vector<ReadIntensity<_prec> > new_signal = (*i).const_signal(local_source_signal);
 
     new_signal[a_cycle] = apply_correction(new_signal[a_cycle]);
@@ -323,7 +333,7 @@ bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clust
     (*i).add_signal(local_target_signal);
     (*i).signal(local_target_signal).clear();
     (*i).signal(local_target_signal) = new_signal;
-   
+
     //TODO: inefficient
     (*i).noise(local_target_signal)  = (*i).const_noise(local_source_signal);
   }
@@ -333,7 +343,7 @@ bool CrossTalkCorrection<_prec>::apply_correction(vector<Cluster<_prec> > &clust
 
 template<class _prec>
 ReadIntensity<_prec> CrossTalkCorrection<_prec>::apply_correction(const ReadIntensity<_prec> &r) {
-  
+
   ReadIntensity<_prec> r1;
 
   _prec a_val = r.get_base(ReadIntensity<_prec>::base_a);
@@ -350,7 +360,7 @@ ReadIntensity<_prec> CrossTalkCorrection<_prec>::apply_correction(const ReadInte
 
   return r1;
 }
- 
+
 template<class _prec>
 void CrossTalkCorrection<_prec>::apply_correction_values() {
   for(size_t n=0;n<A_values.size();n++) {
@@ -375,7 +385,7 @@ void CrossTalkCorrection<_prec>::apply_correction_values() {
     A_AC_values[n] = aval;
     C_AC_values[n] = cval;
   }
-  
+
   for(size_t n=0;n<A_CA_values.size();n++) {
     _prec aval = A_CA_values[n];
     _prec cval = C_CA_values[n];
@@ -419,7 +429,7 @@ void CrossTalkCorrection<_prec>::apply_correction(_prec &a_val,_prec &c_val,_pre
   _prec old_g = g_val;
   _prec new_t = v*old_t+-1*gt_m*v*old_g;
   _prec new_g = -1*tg_m*v*old_t+v*old_g;
-    
+
   t_val = new_t;
   g_val = new_g;
 }
